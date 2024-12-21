@@ -1,6 +1,6 @@
 {
   "name": "use-virtual",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "😎 ♻️ A tiny React hook for rendering large datasets like a breeze.",
   "type": "module",
   "sideEffects": false,
