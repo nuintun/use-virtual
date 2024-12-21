@@ -1,6 +1,6 @@
 {
-  "name": "@nuintun/use-virtual",
-  "version": "0.2.0",
+  "name": "use-virtual",
+  "version": "0.1.0",
   "description": "😎 ♻️ A tiny React hook for rendering large datasets like a breeze.",
   "type": "module",
   "sideEffects": false,
@@ -55,7 +55,7 @@
     "prettier": "^3.4.2",
     "react": "^18.3.1",
     "rimraf": "^6.0.1",
-    "rollup": "^4.28.1",
+    "rollup": "^4.29.0",
     "typescript": "^5.7.2"
   },
   "peerDependencies": {
