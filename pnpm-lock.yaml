@@ -19,7 +19,7 @@ importers:
         specifier: ^12.1.2
         version: 12.1.2(rollup@4.30.0)(tslib@2.8.1)(typescript@5.7.2)
       '@types/react':
-        specifier: ^18.3.17
+        specifier: ^18.3.18
         version: 18.3.18
       dts-paths:
         specifier: ^1.1.1
