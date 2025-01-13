@@ -5,7 +5,7 @@
 import { now } from './utils/now';
 import { Align } from './utils/align';
 import { getSize } from './utils/size';
-import { setMeasure } from './utils/measure';
+import { setMeasures } from './utils/measure';
 import { getBoundingRect } from './utils/rect';
 import { getInitialState } from './utils/state';
 import { getVirtualRange } from './utils/range';
@@ -78,7 +78,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
 
     if (remeasureIndex >= 0) {
       for (let index = remeasureIndex; index < count; index++) {
-        setMeasure(measures, index, getSize(index, size, measures, viewport));
+        setMeasures(measures, index, getSize(index, size, measures, viewport));
       }
 
       remeasureIndexRef.current = -1;
@@ -154,7 +154,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
                         }
                       }
 
-                      setMeasure(measures, index, nextSize);
+                      setMeasures(measures, index, nextSize);
 
                       const { current: scrollOffset } = scrollOffsetRef;
                       const { current: remeasureIndex } = remeasureIndexRef;
