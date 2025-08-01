@@ -54,11 +54,11 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   const observe = useResizeObserver();
   const viewportRef = useRef<T>(null);
   const remeasureIndexRef = useRef(-1);
-  const scrollToRafRef = useRef<number>();
   const optionsRef = useLatestRef(options);
-  const scrollingRafRef = useRef<number>();
   const measuresRef = useRef<Measure[]>([]);
   const prevSize = usePrevious(options.size);
+  const scrollToRafRef = useRef<number>(null);
+  const scrollingRafRef = useRef<number>(null);
   const [state, setState] = useState(getInitialState);
   const viewportRectRef = useRef<Rect>({ width: 0, height: 0 });
   const keysRef = useLatestRef(horizontal ? HORIZONTAL_KEYS : VERTICAL_KEYS);

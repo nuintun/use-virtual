@@ -122,8 +122,8 @@ export interface State {
 }
 
 export type Virtual<T extends HTMLElement, U extends HTMLElement> = readonly [
-  viewportRef: RefObject<T>,
-  listRef: RefObject<U>,
+  viewportRef: RefObject<T | null>,
+  listRef: RefObject<U | null>,
   items: readonly Item[],
   api: Api
 ];
