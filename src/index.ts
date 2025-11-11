@@ -137,7 +137,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
                 entry => {
                   const { current: list } = listRef;
 
-                  if (list && index < measures.length) {
+                  if (list != null && index < measures.length) {
                     const { start, size } = measures[index];
                     const nextSize = getBoundingRect(entry)[keysRef.current.size];
 
@@ -423,7 +423,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   useSafeLayoutEffect(() => {
     const { current: viewport } = viewportRef;
 
-    if (viewport) {
+    if (viewport != null) {
       const unobserve = observe(viewport, entry => {
         const viewport = getBoundingRect(entry, true);
 
