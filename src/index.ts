@@ -19,7 +19,7 @@ import { HORIZONTAL_KEYS, VERTICAL_KEYS } from './utils/keys';
 import { useResizeObserver } from './hooks/useResizeObserver';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSafeLayoutEffect } from './hooks/useSafeLayoutEffect';
-import { abortAnimationFrame, requestDeferAnimationFrame } from './utils/raf';
+import { cancelScheduleFrame, requestScheduleFrame } from './utils/frame';
 import { Item, Measure, Options, Rect, ScrollTo, ScrollToItem, State, Virtual } from './utils/interface';
 import { getDuration, getScrollingOptions, getScrollToItemOptions, getScrollToOptions } from './utils/scroll';
 
@@ -248,7 +248,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   }, []);
 
   const scrollTo = useCallback<ScrollTo>((value, callback) => {
-    abortAnimationFrame(scrollToRafRef.current);
+    cancelScheduleFrame(scrollToRafRef.current);
 
     if (isMountedRef.current) {
       remeasure();
@@ -260,7 +260,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
       const onComplete = () => {
         if (callback) {
           // 延迟 6 帧等待绘制完成
-          requestDeferAnimationFrame(
+          requestScheduleFrame(
             6,
             () => {
               if (isMountedRef.current) {
@@ -442,7 +442,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
           scrollingRef.current = true;
 
           // 取消前次滚动状态更新回调
-          abortAnimationFrame(scrollingRafRef.current);
+          cancelScheduleFrame(scrollingRafRef.current);
 
           // 更新可视区域
           update(scrollOffset, Events.Scroll | Events.ReachEnd);
@@ -451,7 +451,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
           scrollOffsetRef.current = scrollOffset;
 
           // 延迟 2 帧更新滚动状态并重新触发一次更新同步状态
-          requestDeferAnimationFrame(
+          requestScheduleFrame(
             2,
             () => {
               scrollingRef.current = false;

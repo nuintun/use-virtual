@@ -12,7 +12,7 @@ export function setStyles(
   element: HTMLElement | null,
   styles: [property: string, value: string | null, priority?: string][]
 ): void {
-  if (element) {
+  if (element != null) {
     const { style } = element;
 
     for (const [property, value, priority] of styles) {
@@ -28,7 +28,7 @@ export function setStyles(
  * @param styles 样式列表
  */
 export function removeStyles(element: HTMLElement | null, styles: string[]): void {
-  if (element) {
+  if (element != null) {
     const { style } = element;
 
     for (const property of styles) {

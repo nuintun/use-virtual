@@ -52,9 +52,9 @@ export function useResizeObserver(): Observe {
 
   useEffect(() => {
     return () => {
-      observer.disconnect();
-
       callbacks.clear();
+
+      observer.disconnect();
     };
   }, []);
 
