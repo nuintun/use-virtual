@@ -3,7 +3,7 @@
  */
 
 import { isFunction } from './typeof';
-import { Size, Measure, Rect } from './interface';
+import { Measure, Rect, Size } from './interface';
 
 /**
  * @function getSize
@@ -12,7 +12,7 @@ import { Size, Measure, Rect } from './interface';
  * @param measures 已缓存测量数组
  * @param viewport 视窗尺寸
  */
-export function getSize(index: number, size: Size, measures: Measure[], viewport: Rect): number {
+export function getSize(index: number, size: number | Size, measures: Measure[], viewport: Rect): number {
   const isFunctionSize = isFunction(size);
   const measure: Measure | undefined = measures[index];
   const nextSize = measure?.size || (isFunctionSize ? size(index, viewport) : size);

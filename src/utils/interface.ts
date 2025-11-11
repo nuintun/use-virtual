@@ -5,14 +5,6 @@
 import { Align } from './align';
 import { RefObject } from 'react';
 
-export type Easing = (time: number) => number;
-
-export type Duration = number | ((distance: number) => number);
-
-export type VirtualRange = readonly [start: number, end: number];
-
-export type Size = number | ((index: number, viewport: Rect) => number);
-
 export interface Rect {
   readonly width: number;
   readonly height: number;
@@ -40,10 +32,12 @@ export interface Item {
   readonly observe: Observe;
 }
 
-export interface Scrolling {
-  readonly easing?: Easing;
-  readonly duration?: Duration;
-}
+export type VirtualRange = readonly [
+  // Start index.
+  start: number,
+  // End index.
+  end: number
+];
 
 export interface ResizeEvent {
   readonly width: number;
@@ -78,16 +72,17 @@ export interface onReachEnd {
   (event: ReachEndEvent): void;
 }
 
-export interface Options {
-  readonly size: Size;
-  readonly count: number;
-  readonly overscan?: number;
-  readonly onResize?: OnResize;
-  readonly onScroll?: OnScroll;
-  readonly scrollbar?: boolean;
-  readonly horizontal?: boolean;
-  readonly scrolling?: Scrolling;
-  readonly onReachEnd?: onReachEnd;
+export interface Easing {
+  (time: number): number;
+}
+
+export interface Duration {
+  (distance: number): number;
+}
+
+export interface Scrolling {
+  readonly easing?: Easing;
+  readonly duration?: number | Duration;
 }
 
 export interface ScrollToOptions {
@@ -111,14 +106,30 @@ export interface ScrollToItem {
   (options: ScrollToItemOptions, callback?: () => void): void;
 }
 
-export interface Api {
-  readonly scrollTo: ScrollTo;
-  readonly scrollToItem: ScrollToItem;
-}
-
 export interface State {
   readonly items: readonly Item[];
   readonly list: readonly [offset: number, size: number];
+}
+
+export interface Size {
+  (index: number, viewport: Rect): number;
+}
+
+export interface Options {
+  readonly count: number;
+  readonly overscan?: number;
+  readonly onResize?: OnResize;
+  readonly onScroll?: OnScroll;
+  readonly scrollbar?: boolean;
+  readonly size: number | Size;
+  readonly horizontal?: boolean;
+  readonly scrolling?: Scrolling;
+  readonly onReachEnd?: onReachEnd;
+}
+
+export interface Api {
+  readonly scrollTo: ScrollTo;
+  readonly scrollToItem: ScrollToItem;
 }
 
 export type Virtual<T extends HTMLElement, U extends HTMLElement> = readonly [

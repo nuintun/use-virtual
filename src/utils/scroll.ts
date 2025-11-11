@@ -43,7 +43,7 @@ export function getScrollingOptions(scrolling?: Scrolling): Required<Scrolling> 
  * @param duration 原始滚动时长参数
  * @param distance 滚动距离
  */
-export function getDuration(duration: Duration, distance: number): number {
+export function getDuration(duration: number | Duration, distance: number): number {
   return isFunction(duration) ? duration(Math.abs(distance)) : duration;
 }
 
