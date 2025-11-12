@@ -31,6 +31,7 @@ export function binarySearch(measures: Measure[], offset: number, start: number,
 
 /**
  * @function getVirtualRange
+ * @description 计算虚拟列表中可见元素的索引范围
  * @param viewport 视窗尺寸
  * @param offset 视窗滚动偏移
  * @param measures 已缓存测量数组
