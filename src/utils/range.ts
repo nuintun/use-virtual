@@ -19,7 +19,7 @@ export function binarySearch(measures: Measure[], offset: number, start: number,
 
     if (measure.end <= offset) {
       start = middle + 1;
-    } else if (measure.start > offset) {
+    } else if (measure.start >= offset) {
       end = middle - 1;
     } else {
       return middle;
@@ -31,7 +31,7 @@ export function binarySearch(measures: Measure[], offset: number, start: number,
 
 /**
  * @function getVirtualRange
- * @param size 视窗尺寸
+ * @param viewport 视窗尺寸
  * @param offset 视窗滚动偏移
  * @param measures 已缓存测量数组
  * @param anchor 锚点索引
