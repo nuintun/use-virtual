@@ -37,7 +37,7 @@ export function binarySearch(measures: Measure[], offset: number, start: number,
  * @param measures 已缓存测量数组
  * @param anchor 锚点索引
  */
-export function getVirtualRange(viewport: number, offset: number, measures: Measure[], anchor: number): void | VirtualRange {
+export function getVirtualRange(viewport: number, offset: number, measures: Measure[], anchor: number): VirtualRange | void {
   const { length } = measures;
 
   if (viewport > 0 && length > 0) {
