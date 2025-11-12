@@ -19,7 +19,7 @@ export function binarySearch(measures: Measure[], offset: number, start: number,
 
     if (measure.end <= offset) {
       start = middle + 1;
-    } else if (measure.start >= offset) {
+    } else if (measure.start > offset) {
       end = middle - 1;
     } else {
       return middle;
