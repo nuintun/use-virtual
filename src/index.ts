@@ -451,11 +451,3 @@ export function useVirtual(options: Options): Virtual {
 
   return [state.size, state.items, { scrollTo, scrollToItem }];
 }
-
-useVirtual({
-  count: 1000,
-  size: 50,
-  viewport() {
-    return document.querySelector('.viewport');
-  }
-});
