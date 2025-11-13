@@ -32,41 +32,37 @@ function binarySearch(measurements: Measurement[], offset: number, start: number
 }
 
 /**
- * @function getVirtualRange
+ * @function getRange
  * @description 计算虚拟列表中可见元素的索引范围
  * @param measurements 已缓存测量数组
  * @param viewport 视窗尺寸
  * @param offset 视窗滚动偏移
  * @param anchor 锚点索引
  */
-export function getVirtualRange(measurements: Measurement[], viewport: number, offset: number, anchor: number): Range | void {
-  const { length } = measurements;
+export function getRange(measurements: Measurement[], viewport: number, offset: number, anchor: number): Range {
+  let start = anchor;
 
-  if (viewport > 0 && length > 0) {
-    const maxIndex = length - 1;
-    const offsetEnd = offset + viewport;
-    const { start: anchorOffset } = measurements[anchor];
+  const maxIndex = measurements.length - 1;
+  const offsetEnd = offset + viewport;
+  const { start: anchorOffset } = measurements[anchor];
 
-    let start = anchor;
-
-    if (anchorOffset > offset) {
-      start = binarySearch(measurements, offset, 0, anchor);
-    } else if (anchorOffset < offset) {
-      start = binarySearch(measurements, offset, anchor, maxIndex);
-    }
-
-    let end = start;
-
-    while (end < maxIndex) {
-      const measurement = measurements[end];
-
-      if (measurement.start < offsetEnd && measurement.end >= offsetEnd) {
-        return [start, end];
-      } else {
-        end++;
-      }
-    }
-
-    return [start, end];
+  if (anchorOffset > offset) {
+    start = binarySearch(measurements, offset, 0, anchor);
+  } else if (anchorOffset < offset) {
+    start = binarySearch(measurements, offset, anchor, maxIndex);
   }
+
+  let end = start;
+
+  while (end < maxIndex) {
+    const measurement = measurements[end];
+
+    if (measurement.start < offsetEnd && measurement.end >= offsetEnd) {
+      return [start, end];
+    } else {
+      end++;
+    }
+  }
+
+  return [start, end];
 }

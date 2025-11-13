@@ -12,12 +12,12 @@ export interface Size {
 
 /**
  * @function getSize
- * @param index 索引
- * @param size 列表项目尺寸
  * @param measurements 已缓存测量数组
  * @param viewport 视窗尺寸
+ * @param size 列表项目尺寸
+ * @param index 索引
  */
-export function getSize(index: number, size: number | Size, measurements: Measurement[], viewport: Rect): number {
+export function getSize(measurements: Measurement[], viewport: Rect, size: number | Size, index: number): number {
   const isFunctionSize = isFunction(size);
   const measurement: Measurement | undefined = measurements[index];
   const nextSize = measurement?.size || (isFunctionSize ? size(index, viewport) : size);

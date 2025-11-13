@@ -12,9 +12,9 @@ import {
 import { now } from './utils/now';
 import { Align } from './utils/align';
 import { getSize } from './utils/size';
+import { getRange } from './utils/range';
+import { clampOffset } from './utils/offset';
 import { getDuration } from './utils/easing';
-import { getVirtualRange } from './utils/range';
-import { getScrollOffset } from './utils/offset';
 import { Events, hasEvent } from './utils/events';
 import { usePrevious } from './hooks/usePrevious';
 import { useLatestRef } from './hooks/useLatestRef';
@@ -51,6 +51,7 @@ export function useVirtual(options: Options): Virtual {
     }
   }
 
+  const scrollSizeRef = useRef(0);
   const anchorIndexRef = useRef(0);
   const scrollOffsetRef = useRef(0);
   const isMountedRef = useRef(false);
@@ -75,13 +76,13 @@ export function useVirtual(options: Options): Virtual {
 
   const remeasure = useCallback((): void => {
     const { size, count } = optionsRef.current;
-    const { current: viewport } = viewportRectRef;
     const { current: measurements } = measurementsRef;
+    const { current: viewportRect } = viewportRectRef;
     const { current: remeasureIndex } = remeasureIndexRef;
 
     if (remeasureIndex >= 0) {
       for (let index = remeasureIndex; index < count; index++) {
-        setMeasurementAt(measurements, index, getSize(index, size, measurements, viewport));
+        setMeasurementAt(measurements, index, getSize(measurements, viewportRect, size, index));
       }
 
       remeasureIndexRef.current = -1;
@@ -108,14 +109,14 @@ export function useVirtual(options: Options): Virtual {
       remeasure();
 
       const { current: options } = optionsRef;
-      const { current: viewport } = viewportRectRef;
       const { current: measurements } = measurementsRef;
+      const { current: viewportRect } = viewportRectRef;
+      const viewportSize = viewportRect[keysRef.current.size];
 
-      const viewportSize = viewport[keysRef.current.size];
-      const offset = getScrollOffset(measurements, viewportSize, scrollOffset);
-      const range = getVirtualRange(measurements, viewportSize, offset, anchorIndexRef.current);
+      if (viewportSize > 0 && measurements.length > 0) {
+        const offset = clampOffset(measurements, viewportSize, scrollOffset);
+        const range = getRange(measurements, viewportSize, offset, anchorIndexRef.current);
 
-      if (range) {
         const items: Item[] = [];
         const [start, end] = range;
         const { overscan = 10 } = options;
@@ -143,8 +144,8 @@ export function useVirtual(options: Options): Virtual {
                     if (nextSize !== size) {
                       if (__DEV__) {
                         const { size } = optionsRef.current;
-                        const { current: viewport } = viewportRectRef;
-                        const initialValue = getSize(index, size, measurements, viewport);
+                        const { current: viewportRect } = viewportRectRef;
+                        const initialValue = getSize(measurements, viewportRect, size, index);
 
                         if (nextSize < initialValue) {
                           const message = 'size %o of virtual item %o cannot be less than initial size %o';
@@ -188,8 +189,7 @@ export function useVirtual(options: Options): Virtual {
             return { items, size: prevSize };
           }
 
-          // 四舍五入，防止出现小数无法触底更新高度
-          const scrollSize = (scrollOffset + viewportSize + 0.5) | 0;
+          const { current: scrollSize } = scrollSizeRef;
           const usePrevSize = scrollSize < prevSize && scrollSize < size;
 
           return { items, size: usePrevSize ? prevSize : size };
@@ -198,8 +198,8 @@ export function useVirtual(options: Options): Virtual {
         if (hasEvent(events, Events.Resize)) {
           options.onResize?.({
             visible: [start, end],
-            width: viewport.width,
-            height: viewport.height,
+            width: viewportRect.width,
+            height: viewportRect.height,
             items: [startIndex, endIndex]
           });
         }
@@ -213,11 +213,13 @@ export function useVirtual(options: Options): Virtual {
           });
         }
 
-        if (end >= maxIndex && hasEvent(events, Events.ReachEnd)) {
-          options.onReachEnd?.({
-            visible: [start, end],
-            items: [startIndex, endIndex]
-          });
+        if (hasEvent(events, Events.ReachEnd)) {
+          if (scrollOffset + viewportSize >= scrollSizeRef.current) {
+            options.onReachEnd?.({
+              visible: [start, end],
+              items: [startIndex, endIndex]
+            });
+          }
         }
       } else {
         dispatch(() => ({ size: 0, items: [] }));
@@ -226,8 +228,8 @@ export function useVirtual(options: Options): Virtual {
           options.onResize?.({
             items: [0, 0],
             visible: [0, 0],
-            width: viewport.width,
-            height: viewport.height
+            width: viewportRect.width,
+            height: viewportRect.height
           });
         }
 
@@ -249,7 +251,7 @@ export function useVirtual(options: Options): Virtual {
 
       const config = normalizeScrollToOptions(value);
       const viewportSize = viewportRectRef.current[keysRef.current.size];
-      const offset = getScrollOffset(measurementsRef.current, viewportSize, config.offset);
+      const offset = clampOffset(measurementsRef.current, viewportSize, config.offset);
 
       const onComplete = () => {
         if (callback) {
@@ -315,7 +317,7 @@ export function useVirtual(options: Options): Virtual {
             index = Math.max(0, Math.min(index, maxIndex));
 
             const { start, size, end } = measurements[index];
-            const viewport = viewportRectRef.current[keysRef.current.size];
+            const viewportSize = viewportRectRef.current[keysRef.current.size];
 
             let { current: offset } = scrollOffsetRef;
 
@@ -324,21 +326,21 @@ export function useVirtual(options: Options): Virtual {
                 offset = start;
                 break;
               case Align.Center:
-                offset = start + size / 2 - viewport / 2;
+                offset = start + size / 2 - viewportSize / 2;
                 break;
               case Align.End:
-                offset = end - viewport;
+                offset = end - viewportSize;
                 break;
               default:
                 if (end <= offset) {
                   offset = start;
-                } else if (start >= offset + viewport) {
-                  offset = end - viewport;
+                } else if (start >= offset + viewportSize) {
+                  offset = end - viewportSize;
                 }
                 break;
             }
 
-            return Math.max(0, getScrollOffset(measurements, viewport, offset));
+            return Math.max(0, clampOffset(measurements, viewportSize, offset));
           }
         }
 
@@ -373,11 +375,15 @@ export function useVirtual(options: Options): Virtual {
     const viewport = optionsRef.current.viewport();
 
     if (viewport != null) {
-      const unobserve = observe(viewport, entry => {
-        const viewport = getBoundingRect(entry, true);
+      scrollSizeRef.current = viewport[keysRef.current.scrollSize];
 
-        if (!isEqual(viewport, viewportRectRef.current, ['width', 'height'])) {
-          viewportRectRef.current = viewport;
+      const unobserve = observe(viewport, entry => {
+        const viewportRect = getBoundingRect(entry, true);
+
+        scrollSizeRef.current = viewport[keysRef.current.scrollSize];
+
+        if (!isEqual(viewportRect, viewportRectRef.current, ['width', 'height'])) {
+          viewportRectRef.current = viewportRect;
 
           update(scrollOffsetRef.current, Events.Resize | Events.ReachEnd);
         }
