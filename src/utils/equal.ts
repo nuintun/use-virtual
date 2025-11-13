@@ -28,7 +28,7 @@ export function isEqual<T>(next: T, prev: T, keys: (keyof T)[]): boolean {
  * @param prev 旧状态
  */
 export function isEqualState(next: State, prev: State): boolean {
-  if (!isEqual(prev.list, next.list, [0, 1])) {
+  if (prev.size !== next.size) {
     return false;
   }
 

@@ -28,8 +28,6 @@ export interface OnScroll {
 
 export interface ReachEndEvent {
   readonly items: Range;
-  readonly index: number;
-  readonly offset: number;
   readonly visible: Range;
 }
 

@@ -4,7 +4,6 @@
 
 import { Size } from './size';
 import { Item } from './state';
-import { RefObject } from 'react';
 import { onReachEnd, OnResize, OnScroll } from './events';
 import { Scrolling, ScrollTo, ScrollToItem } from './scroll';
 
@@ -18,16 +17,14 @@ export interface Options {
   readonly horizontal?: boolean;
   readonly scrolling?: Scrolling;
   readonly onReachEnd?: onReachEnd;
+  readonly viewport: () => Element | null;
 }
 
-interface Controller {
-  readonly scrollTo: ScrollTo;
-  readonly scrollToItem: ScrollToItem;
-}
-
-export type Virtual<T extends HTMLElement, U extends HTMLElement> = readonly [
-  viewportRef: RefObject<T | null>,
-  listRef: RefObject<U | null>,
+export type Virtual = readonly [
+  size: number,
   items: readonly Item[],
-  controller: Controller
+  controller: {
+    readonly scrollTo: ScrollTo;
+    readonly scrollToItem: ScrollToItem;
+  }
 ];

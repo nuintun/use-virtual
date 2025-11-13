@@ -2,6 +2,13 @@
  * @module index
  */
 
+import {
+  normalizeScrollingOptions,
+  normalizeScrollToItemOptions,
+  normalizeScrollToOptions,
+  ScrollTo,
+  ScrollToItem
+} from './utils/scroll';
 import { now } from './utils/now';
 import { Align } from './utils/align';
 import { getSize } from './utils/size';
@@ -14,7 +21,6 @@ import { useLatestRef } from './hooks/useLatestRef';
 import { Options, Virtual } from './utils/interface';
 import { getBoundingRect, Rect } from './utils/rect';
 import { isEqual, isEqualState } from './utils/equal';
-import { removeStyles, setStyles } from './utils/styles';
 import { getInitialState, Item, State } from './utils/state';
 import { HORIZONTAL_KEYS, VERTICAL_KEYS } from './utils/keys';
 import { useResizeObserver } from './hooks/useResizeObserver';
@@ -22,17 +28,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSafeLayoutEffect } from './hooks/useSafeLayoutEffect';
 import { Measurement, setMeasurementAt } from './utils/measurement';
 import { cancelScheduleFrame, requestScheduleFrame } from './utils/frame';
-import { getScrollingOptions, getScrollToItemOptions, getScrollToOptions, ScrollTo, ScrollToItem } from './utils/scroll';
 
-// Export typescript types
-export type { Options, Virtual } from './utils/interface';
+// 导出配置类型定义
+export type { Options };
 
 /**
  * @function useVirtual
  * @description [hook] 虚列表
  * @param options 配置参数
  */
-export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options: Options): Virtual<T, U> {
+export function useVirtual(options: Options): Virtual {
   const { size, count, horizontal } = options;
 
   if (__DEV__) {
@@ -47,16 +52,14 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
     }
   }
 
-  const listRef = useRef<U>(null);
   const anchorIndexRef = useRef(0);
   const scrollOffsetRef = useRef(0);
   const isMountedRef = useRef(false);
+  const prevSize = usePrevious(size);
   const scrollingRef = useRef(false);
   const observe = useResizeObserver();
-  const viewportRef = useRef<T>(null);
   const remeasureIndexRef = useRef(-1);
   const optionsRef = useLatestRef(options);
-  const prevSize = usePrevious(options.size);
   const scrollToRafRef = useRef<number>(null);
   const scrollingRafRef = useRef<number>(null);
   const measurementsRef = useRef<Measurement[]>([]);
@@ -65,7 +68,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   const keysRef = useLatestRef(horizontal ? HORIZONTAL_KEYS : VERTICAL_KEYS);
 
   const scrollToOffset = useCallback((offset: number): void => {
-    viewportRef.current?.scrollTo({
+    optionsRef.current.viewport()?.scrollTo({
       behavior: 'auto',
       [keysRef.current.scrollTo]: offset
     });
@@ -89,8 +92,8 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   const dispatch = useCallback((action: (prevState: State) => State): void => {
     setState(prevState => {
       if (__DEV__) {
-        const { items, list } = action(prevState);
-        const nextState = { items: Object.freeze(items), list };
+        const { size, items } = action(prevState);
+        const nextState = { size, items: Object.freeze(items) };
 
         return isEqualState(nextState, prevState) ? prevState : nextState;
       }
@@ -131,18 +134,14 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
             size: measurement.size,
             start: measurement.start,
             ref: element => {
-              setStyles(element, [['margin', '0']]);
-
               return observe(
                 element,
                 entry => {
-                  const { current: list } = listRef;
-
-                  if (list != null && index < measurements.length) {
+                  if (index < measurements.length) {
                     const { start, size } = measurements[index];
                     const nextSize = getBoundingRect(entry)[keysRef.current.size];
 
-                    if (nextSize !== size && list.contains(entry.target)) {
+                    if (nextSize !== size) {
                       if (__DEV__) {
                         const { size } = optionsRef.current;
                         const { current: viewport } = viewportRectRef;
@@ -183,19 +182,18 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
           items.push(__DEV__ ? Object.freeze(item) : item);
         }
 
-        const listSize = measurements[maxIndex].end;
-        const listOffset = measurements[startIndex].start;
+        const size = measurements[maxIndex].end;
 
-        dispatch(({ list: [, prevListSize] }) => {
+        dispatch(({ size: prevSize }) => {
           if (options.scrollbar === false) {
-            return { items, list: [listOffset, listSize] };
+            return { items, size: prevSize };
           }
 
           // 四舍五入，防止出现小数无法触底更新高度
           const scrollSize = (scrollOffset + viewportSize + 0.5) | 0;
-          const usePrevSize = scrollSize < prevListSize && scrollSize < listSize;
+          const usePrevSize = scrollSize < prevSize && scrollSize < size;
 
-          return { items, list: [listOffset, usePrevSize ? prevListSize : listSize] };
+          return { items, size: usePrevSize ? prevSize : size };
         });
 
         if (hasEvent(events, Events.Resize)) {
@@ -218,19 +216,17 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
 
         if (end >= maxIndex && hasEvent(events, Events.ReachEnd)) {
           options.onReachEnd?.({
-            offset,
-            index: end,
             visible: [start, end],
             items: [startIndex, endIndex]
           });
         }
       } else {
-        dispatch(() => ({ items: [], list: [0, -1] }));
+        dispatch(() => ({ size: 0, items: [] }));
 
         if (hasEvent(events, Events.Resize)) {
           options.onResize?.({
-            items: [-1, -1],
-            visible: [-1, -1],
+            items: [0, 0],
+            visible: [0, 0],
             width: viewport.width,
             height: viewport.height
           });
@@ -238,10 +234,8 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
 
         if (viewportSize > 0 && hasEvent(events, Events.ReachEnd)) {
           options.onReachEnd?.({
-            offset,
-            index: -1,
-            items: [-1, -1],
-            visible: [-1, -1]
+            items: [0, 0],
+            visible: [0, 0]
           });
         }
       }
@@ -254,7 +248,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
     if (isMountedRef.current) {
       remeasure();
 
-      const config = getScrollToOptions(value);
+      const config = normalizeScrollToOptions(value);
       const viewportSize = viewportRectRef.current[keysRef.current.size];
       const offset = getScrollOffset(measurementsRef.current, viewportSize, config.offset);
 
@@ -279,7 +273,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
         const start = now();
         const { current: options } = optionsRef;
         const { current: scrollOffset } = scrollOffsetRef;
-        const config = getScrollingOptions(options.scrolling);
+        const config = normalizeScrollingOptions(options.scrolling);
 
         const distance = offset - scrollOffset;
         const duration = getDuration(config.duration, Math.abs(distance));
@@ -309,7 +303,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
 
   const scrollToItem = useCallback<ScrollToItem>((value, callback) => {
     if (isMountedRef.current) {
-      const { index, align, smooth } = getScrollToItemOptions(value);
+      const { index, align, smooth } = normalizeScrollToItemOptions(value);
 
       const getOffset = (index: number): number => {
         if (isMountedRef.current) {
@@ -377,52 +371,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   }, []);
 
   useSafeLayoutEffect(() => {
-    setStyles(listRef.current, [
-      ['margin', '0'],
-      ['box-sizing', 'border-box']
-    ]);
-
-    setStyles(viewportRef.current, [['padding', '0']]);
-  }, []);
-
-  useSafeLayoutEffect(() => {
-    const paddingTop = 'padding-top';
-    const paddingLeft = 'padding-left';
-    const paddingRight = 'padding-right';
-    const paddingBottom = 'padding-bottom';
-
-    const { current: list } = listRef;
-
-    if (horizontal) {
-      setStyles(list, [[paddingRight, '0']]);
-      removeStyles(list, ['height', paddingTop, paddingBottom]);
-    } else {
-      setStyles(list, [[paddingBottom, '0']]);
-      removeStyles(list, ['width', paddingLeft, paddingRight]);
-    }
-  }, [horizontal]);
-
-  const [listOffset, listSize] = state.list;
-
-  useSafeLayoutEffect(() => {
-    const { current: list } = listRef;
-    const { size: sizeKey } = keysRef.current;
-
-    if (listSize < 0) {
-      removeStyles(list, [sizeKey]);
-    } else {
-      setStyles(list, [[sizeKey, `${listSize}px`]]);
-    }
-  }, [listSize, horizontal]);
-
-  useSafeLayoutEffect(() => {
-    const { offset: offsetKey } = keysRef.current;
-
-    setStyles(listRef.current, [[offsetKey, `${listOffset}px`]]);
-  }, [listOffset, horizontal]);
-
-  useSafeLayoutEffect(() => {
-    const { current: viewport } = viewportRef;
+    const viewport = optionsRef.current.viewport();
 
     if (viewport != null) {
       const unobserve = observe(viewport, entry => {
@@ -501,5 +450,5 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
     update(scrollOffsetRef.current, Events.ReachEnd);
   }, [count, size, horizontal]);
 
-  return [viewportRef, listRef, state.items, { scrollTo, scrollToItem }];
+  return [state.size, state.items, { scrollTo, scrollToItem }];
 }

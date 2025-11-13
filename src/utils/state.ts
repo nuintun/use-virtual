@@ -15,8 +15,8 @@ export interface Item {
 }
 
 export interface State {
+  readonly size: number;
   readonly items: readonly Item[];
-  readonly list: readonly [offset: number, size: number];
 }
 
 /**
@@ -26,5 +26,5 @@ export interface State {
 export function getInitialState(): State {
   const items: Item[] = [];
 
-  return { items: __DEV__ ? Object.freeze(items) : items, list: [0, -1] };
+  return { size: 0, items: __DEV__ ? Object.freeze(items) : items };
 }

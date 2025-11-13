@@ -33,11 +33,11 @@ export interface ScrollToItem {
 }
 
 /**
- * @function getScrollingOptions
- * @description 获取滚动参数配置
+ * @function normalizeScrollingOptions
+ * @description 标准化滚动参数配置
  * @param scrolling 原始滚动配置
  */
-export function getScrollingOptions(scrolling?: Scrolling): Required<Scrolling> {
+export function normalizeScrollingOptions(scrolling?: Scrolling): Required<Scrolling> {
   const { easing, duration } = scrolling || {};
 
   return {
@@ -47,19 +47,19 @@ export function getScrollingOptions(scrolling?: Scrolling): Required<Scrolling> 
 }
 
 /**
- * @function getScrollToOptions
- * @description 获取 scrollTo 方法参数
+ * @function normalizeScrollToOptions
+ * @description 标准化 scrollTo 方法参数
  * @param value 原始参数
  */
-export function getScrollToOptions(value: number | ScrollToOptions): ScrollToOptions {
+export function normalizeScrollToOptions(value: number | ScrollToOptions): ScrollToOptions {
   return isNumber(value) ? { offset: value } : value;
 }
 
 /**
- * @function getScrollToItemOptions
- * @description 获取 scrollToItem 方法参数
+ * @function normalizeScrollToItemOptions
+ * @description 标准化 scrollToItem 方法参数
  * @param value 原始参数
  */
-export function getScrollToItemOptions(value: number | ScrollToItemOptions): ScrollToItemOptions {
+export function normalizeScrollToItemOptions(value: number | ScrollToItemOptions): ScrollToItemOptions {
   return isNumber(value) ? { index: value } : value;
 }
