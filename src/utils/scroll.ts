@@ -2,25 +2,34 @@
  * @module scroll
  */
 
-import { isFunction, isNumber } from './typeof';
-import { Duration, Scrolling, ScrollToItemOptions, ScrollToOptions } from './interface';
+import { Align } from './align';
+import { isNumber } from './typeof';
+import { Duration, easeInOutSine, Easing, easingDuration } from './easing';
 
-/**
- * @function easeInOutSine
- * @description easeInOutSine
- * @param time 当前动画时间，0-1 之间
- */
-export function easeInOutSine(time: number): number {
-  return (1 - Math.cos(Math.PI * time)) / 2;
+export interface Scrolling {
+  readonly easing?: Easing;
+  readonly duration?: number | Duration;
 }
 
-/**
- * @function easingDuration
- * @description 缓动动画持续时间
- * @param distance 缓动动画移动总距离
- */
-export function easingDuration(distance: number): number {
-  return Math.min(500, Math.max(100, distance * 0.075));
+export interface ScrollToOptions {
+  readonly offset: number;
+  readonly smooth?: boolean;
+}
+
+export interface ScrollTo {
+  (offset: number, callback?: () => void): void;
+  (options: ScrollToOptions, callback?: () => void): void;
+}
+
+export interface ScrollToItemOptions {
+  readonly index: number;
+  readonly smooth?: boolean;
+  readonly align?: `${Align}`;
+}
+
+export interface ScrollToItem {
+  (index: number, callback?: () => void): void;
+  (options: ScrollToItemOptions, callback?: () => void): void;
 }
 
 /**
@@ -35,16 +44,6 @@ export function getScrollingOptions(scrolling?: Scrolling): Required<Scrolling> 
     easing: easing || easeInOutSine,
     duration: duration || easingDuration
   };
-}
-
-/**
- * @function getDuration
- * @function 获取滚动时长
- * @param duration 原始滚动时长参数
- * @param distance 滚动距离
- */
-export function getDuration(duration: number | Duration, distance: number): number {
-  return isFunction(duration) ? duration(Math.abs(distance)) : duration;
 }
 
 /**

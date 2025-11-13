@@ -2,7 +2,7 @@
  * @module equal
  */
 
-import { Item, State } from './interface';
+import { Item, State } from './state';
 
 /**
  * @function isEqual

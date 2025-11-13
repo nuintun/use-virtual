@@ -2,14 +2,19 @@
  * @module rect
  */
 
-import { Rect } from './interface';
+export interface Rect {
+  readonly width: number;
+  readonly height: number;
+}
 
-// 垂直模式映射表
+// 书写模式映射表
 const VERTICAL_MODE: Record<string, boolean> = {
   tb: true,
   'tb-rl': true,
-  'vertical-rl': true,
-  'vertical-lr': true
+  'sideways-lr': true,
+  'sideways-rl': true,
+  'vertical-lr': true,
+  'vertical-rl': true
 };
 
 /**

@@ -16,6 +16,7 @@ export interface Vertical {
   readonly scrollOffset: 'scrollTop';
 }
 
+// 垂直滚动属性映射表
 export const VERTICAL_KEYS: Vertical = {
   size: 'height',
   scrollTo: 'top',
@@ -23,6 +24,7 @@ export const VERTICAL_KEYS: Vertical = {
   scrollOffset: 'scrollTop'
 };
 
+// 水平滚动属性映射表
 export const HORIZONTAL_KEYS: Horizontal = {
   size: 'width',
   scrollTo: 'left',

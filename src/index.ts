@@ -5,26 +5,27 @@
 import { now } from './utils/now';
 import { Align } from './utils/align';
 import { getSize } from './utils/size';
-import { getBoundingRect } from './utils/rect';
-import { setMeasureAt } from './utils/measure';
-import { getInitialState } from './utils/state';
+import { getDuration } from './utils/easing';
 import { getVirtualRange } from './utils/range';
 import { getScrollOffset } from './utils/offset';
 import { Events, hasEvent } from './utils/events';
 import { usePrevious } from './hooks/usePrevious';
 import { useLatestRef } from './hooks/useLatestRef';
+import { Options, Virtual } from './utils/interface';
+import { getBoundingRect, Rect } from './utils/rect';
 import { isEqual, isEqualState } from './utils/equal';
 import { removeStyles, setStyles } from './utils/styles';
+import { getInitialState, Item, State } from './utils/state';
 import { HORIZONTAL_KEYS, VERTICAL_KEYS } from './utils/keys';
 import { useResizeObserver } from './hooks/useResizeObserver';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSafeLayoutEffect } from './hooks/useSafeLayoutEffect';
+import { Measurement, setMeasurementAt } from './utils/measurement';
 import { cancelScheduleFrame, requestScheduleFrame } from './utils/frame';
-import { Item, Measure, Options, Rect, ScrollTo, ScrollToItem, State, Virtual } from './utils/interface';
-import { getDuration, getScrollingOptions, getScrollToItemOptions, getScrollToOptions } from './utils/scroll';
+import { getScrollingOptions, getScrollToItemOptions, getScrollToOptions, ScrollTo, ScrollToItem } from './utils/scroll';
 
 // Export typescript types
-export type { Item, Options, ScrollToItemOptions, ScrollToOptions, Virtual } from './utils/interface';
+export type { Options, Virtual } from './utils/interface';
 
 /**
  * @function useVirtual
@@ -55,10 +56,10 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   const viewportRef = useRef<T>(null);
   const remeasureIndexRef = useRef(-1);
   const optionsRef = useLatestRef(options);
-  const measuresRef = useRef<Measure[]>([]);
   const prevSize = usePrevious(options.size);
   const scrollToRafRef = useRef<number>(null);
   const scrollingRafRef = useRef<number>(null);
+  const measurementsRef = useRef<Measurement[]>([]);
   const [state, setState] = useState(getInitialState);
   const viewportRectRef = useRef<Rect>({ width: 0, height: 0 });
   const keysRef = useLatestRef(horizontal ? HORIZONTAL_KEYS : VERTICAL_KEYS);
@@ -71,14 +72,14 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   }, []);
 
   const remeasure = useCallback((): void => {
-    const { current: measures } = measuresRef;
     const { size, count } = optionsRef.current;
     const { current: viewport } = viewportRectRef;
+    const { current: measurements } = measurementsRef;
     const { current: remeasureIndex } = remeasureIndexRef;
 
     if (remeasureIndex >= 0) {
       for (let index = remeasureIndex; index < count; index++) {
-        setMeasureAt(measures, index, getSize(index, size, measures, viewport));
+        setMeasurementAt(measurements, index, getSize(index, size, measurements, viewport));
       }
 
       remeasureIndexRef.current = -1;
@@ -105,31 +106,31 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
       remeasure();
 
       const { current: options } = optionsRef;
-      const { current: measures } = measuresRef;
       const { current: viewport } = viewportRectRef;
+      const { current: measurements } = measurementsRef;
 
       const viewportSize = viewport[keysRef.current.size];
-      const offset = getScrollOffset(viewportSize, scrollOffset, measures);
-      const range = getVirtualRange(viewportSize, offset, measures, anchorIndexRef.current);
+      const offset = getScrollOffset(measurements, viewportSize, scrollOffset);
+      const range = getVirtualRange(measurements, viewportSize, offset, anchorIndexRef.current);
 
       if (range) {
         const items: Item[] = [];
         const [start, end] = range;
         const { overscan = 10 } = options;
-        const maxIndex = measures.length - 1;
+        const maxIndex = measurements.length - 1;
         const startIndex = Math.max(0, start - overscan);
         const endIndex = Math.min(end + overscan, maxIndex);
 
         anchorIndexRef.current = start;
 
         for (let index = startIndex; index <= endIndex; index++) {
-          const measure = measures[index];
+          const measurement = measurements[index];
           const item: Item = {
             index,
-            end: measure.end,
-            size: measure.size,
-            start: measure.start,
-            observe: element => {
+            end: measurement.end,
+            size: measurement.size,
+            start: measurement.start,
+            ref: element => {
               setStyles(element, [['margin', '0']]);
 
               return observe(
@@ -137,15 +138,15 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
                 entry => {
                   const { current: list } = listRef;
 
-                  if (list != null && index < measures.length) {
-                    const { start, size } = measures[index];
+                  if (list != null && index < measurements.length) {
+                    const { start, size } = measurements[index];
                     const nextSize = getBoundingRect(entry)[keysRef.current.size];
 
                     if (nextSize !== size && list.contains(entry.target)) {
                       if (__DEV__) {
                         const { size } = optionsRef.current;
                         const { current: viewport } = viewportRectRef;
-                        const initialValue = getSize(index, size, measures, viewport);
+                        const initialValue = getSize(index, size, measurements, viewport);
 
                         if (nextSize < initialValue) {
                           const message = 'size %o of virtual item %o cannot be less than initial size %o';
@@ -154,7 +155,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
                         }
                       }
 
-                      setMeasureAt(measures, index, nextSize);
+                      setMeasurementAt(measurements, index, nextSize);
 
                       const { current: scrollOffset } = scrollOffsetRef;
                       const { current: remeasureIndex } = remeasureIndexRef;
@@ -182,8 +183,8 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
           items.push(__DEV__ ? Object.freeze(item) : item);
         }
 
-        const listSize = measures[maxIndex].end;
-        const listOffset = measures[startIndex].start;
+        const listSize = measurements[maxIndex].end;
+        const listOffset = measurements[startIndex].start;
 
         dispatch(({ list: [, prevListSize] }) => {
           if (options.scrollbar === false) {
@@ -255,7 +256,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
 
       const config = getScrollToOptions(value);
       const viewportSize = viewportRectRef.current[keysRef.current.size];
-      const offset = getScrollOffset(viewportSize, config.offset, measuresRef.current);
+      const offset = getScrollOffset(measurementsRef.current, viewportSize, config.offset);
 
       const onComplete = () => {
         if (callback) {
@@ -314,13 +315,13 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
         if (isMountedRef.current) {
           remeasure();
 
-          const { current: measures } = measuresRef;
-          const maxIndex = measures.length - 1;
+          const { current: measurements } = measurementsRef;
+          const maxIndex = measurements.length - 1;
 
           if (maxIndex >= 0) {
             index = Math.max(0, Math.min(index, maxIndex));
 
-            const { start, size, end } = measures[index];
+            const { start, size, end } = measurements[index];
             const viewport = viewportRectRef.current[keysRef.current.size];
 
             let { current: offset } = scrollOffsetRef;
@@ -344,7 +345,7 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
                 break;
             }
 
-            return Math.max(0, getScrollOffset(viewport, offset, measures));
+            return Math.max(0, getScrollOffset(measurements, viewport, offset));
           }
         }
 
@@ -478,9 +479,9 @@ export function useVirtual<T extends HTMLElement, U extends HTMLElement>(options
   useEffect(() => {
     if (size !== prevSize) {
       remeasureIndexRef.current = 0;
-      measuresRef.current.length = 0;
+      measurementsRef.current.length = 0;
     } else {
-      const { current: measures } = measuresRef;
+      const { current: measures } = measurementsRef;
       const { length } = measures;
 
       if (length > count) {

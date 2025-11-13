@@ -8,12 +8,19 @@ export interface Unobserve {
   (): void;
 }
 
-export interface ResizeObserverCallback {
-  (entry: ResizeObserverEntry): void;
+export interface Observe {
+  (
+    // 监听目标
+    target: Element | null,
+    // 监听回调
+    callback: ResizeObserverCallback,
+    // 监听选项
+    options?: ResizeObserverOptions
+  ): Unobserve;
 }
 
-export interface Observe {
-  (target: Element, callback: ResizeObserverCallback, options?: ResizeObserverOptions): Unobserve;
+export interface ResizeObserverCallback {
+  (entry: ResizeObserverEntry): void;
 }
 
 /**
@@ -39,14 +46,18 @@ export function useResizeObserver(): Observe {
   }, []);
 
   const observe = useCallback<Observe>((target, callback, options) => {
-    callbacks.set(target, callback);
+    if (target != null) {
+      callbacks.set(target, callback);
 
-    observer.observe(target, options);
+      observer.observe(target, options);
+    }
 
     return () => {
-      callbacks.delete(target);
+      if (target != null) {
+        callbacks.delete(target);
 
-      observer.unobserve(target);
+        observer.unobserve(target);
+      }
     };
   }, []);
 
