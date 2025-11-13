@@ -24,10 +24,9 @@ import { isEqual, isEqualState } from './utils/equal';
 import { getInitialState, Item, State } from './utils/state';
 import { HORIZONTAL_KEYS, VERTICAL_KEYS } from './utils/keys';
 import { useResizeObserver } from './hooks/useResizeObserver';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSafeLayoutEffect } from './hooks/useSafeLayoutEffect';
 import { Measurement, setMeasurementAt } from './utils/measurement';
 import { cancelScheduleFrame, requestScheduleFrame } from './utils/frame';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 // 导出配置类型定义
 export type { Options };
@@ -362,7 +361,7 @@ export function useVirtual(options: Options): Virtual {
     }
   }, []);
 
-  useSafeLayoutEffect(() => {
+  useLayoutEffect(() => {
     isMountedRef.current = true;
 
     return () => {
@@ -370,7 +369,7 @@ export function useVirtual(options: Options): Virtual {
     };
   }, []);
 
-  useSafeLayoutEffect(() => {
+  useLayoutEffect(() => {
     const viewport = optionsRef.current.viewport();
 
     if (viewport != null) {
@@ -452,3 +451,11 @@ export function useVirtual(options: Options): Virtual {
 
   return [state.size, state.items, { scrollTo, scrollToItem }];
 }
+
+useVirtual({
+  count: 1000,
+  size: 50,
+  viewport() {
+    return document.querySelector('.viewport');
+  }
+});
