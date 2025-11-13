@@ -32,7 +32,7 @@ export function easingDuration(distance: number): number {
 
 /**
  * @function getDuration
- * @function 获取滚动时长
+ * @description 获取滚动时长
  * @param duration 原始滚动时长参数
  * @param distance 滚动距离
  */

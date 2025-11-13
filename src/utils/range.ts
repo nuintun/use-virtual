@@ -1,5 +1,5 @@
 /**
- * @module search
+ * @module range
  */
 
 import { Measurement } from './measurement';
