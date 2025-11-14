@@ -331,8 +331,8 @@ export function useVirtual(options: Options): Virtual {
           options.onScroll?.({
             offset,
             visible: [start, end],
-            delta: offset - scrollOffset,
-            items: [startIndex, endIndex]
+            items: [startIndex, endIndex],
+            delta: offset - scrollOffsetRef.current
           });
         }
 
