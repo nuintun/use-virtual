@@ -54,10 +54,10 @@ export function useVirtual(options: Options): Virtual {
   const anchorIndexRef = useRef(0);
   const scrollOffsetRef = useRef(0);
   const isMountedRef = useRef(false);
+  const measureIndexRef = useRef(-1);
   const prevSize = usePrevious(size);
   const scrollingRef = useRef(false);
   const observe = useResizeObserver();
-  const remeasureIndexRef = useRef(-1);
   const optionsRef = useLatestRef(options);
   const scrollToRafRef = useRef<number>(null);
   const scrollingRafRef = useRef<number>(null);
@@ -66,25 +66,145 @@ export function useVirtual(options: Options): Virtual {
   const viewportRectRef = useRef<Rect>({ width: 0, height: 0 });
   const keysRef = useLatestRef(horizontal ? HORIZONTAL_KEYS : VERTICAL_KEYS);
 
+  const measure = useCallback((): void => {
+    const { size, count } = optionsRef.current;
+    const { current: measureIndex } = measureIndexRef;
+    const { current: measurements } = measurementsRef;
+    const { current: viewportRect } = viewportRectRef;
+
+    if (measureIndex >= 0) {
+      for (let index = measureIndex; index < count; index++) {
+        setMeasurementAt(measurements, index, getSize(measurements, viewportRect, size, index));
+      }
+
+      measureIndexRef.current = -1;
+    }
+  }, []);
+
   const scrollToOffset = useCallback((offset: number): void => {
     optionsRef.current.viewport()?.scrollTo({
-      behavior: 'auto',
+      behavior: 'instant',
       [keysRef.current.scrollTo]: offset
     });
   }, []);
 
-  const remeasure = useCallback((): void => {
-    const { size, count } = optionsRef.current;
-    const { current: measurements } = measurementsRef;
-    const { current: viewportRect } = viewportRectRef;
-    const { current: remeasureIndex } = remeasureIndexRef;
+  const scrollTo = useCallback<ScrollTo>((value, callback) => {
+    cancelScheduleFrame(scrollToRafRef.current);
 
-    if (remeasureIndex >= 0) {
-      for (let index = remeasureIndex; index < count; index++) {
-        setMeasurementAt(measurements, index, getSize(measurements, viewportRect, size, index));
+    if (isMountedRef.current) {
+      measure();
+
+      const config = normalizeScrollToOptions(value);
+      const viewportSize = viewportRectRef.current[keysRef.current.size];
+      const offset = clampOffset(measurementsRef.current, viewportSize, config.offset);
+
+      const onComplete = () => {
+        if (callback) {
+          // 延迟 6 帧等待绘制完成
+          requestScheduleFrame(
+            6,
+            () => {
+              if (isMountedRef.current) {
+                callback();
+              }
+            },
+            handle => {
+              scrollToRafRef.current = handle;
+            }
+          );
+        }
+      };
+
+      if (config.smooth) {
+        const start = now();
+        const { current: options } = optionsRef;
+        const { current: scrollOffset } = scrollOffsetRef;
+        const config = normalizeScrollingOptions(options.scrolling);
+
+        const distance = offset - scrollOffset;
+        const duration = getDuration(config.duration, Math.abs(distance));
+
+        const scroll = (): void => {
+          if (isMountedRef.current) {
+            const time = Math.min(1, (now() - start) / duration);
+
+            scrollToOffset(config.easing(time) * distance + scrollOffset);
+
+            if (time < 1) {
+              scrollToRafRef.current = requestAnimationFrame(scroll);
+            } else {
+              onComplete();
+            }
+          }
+        };
+
+        scrollToRafRef.current = requestAnimationFrame(scroll);
+      } else {
+        scrollToOffset(offset);
+
+        onComplete();
       }
+    }
+  }, []);
 
-      remeasureIndexRef.current = -1;
+  const scrollToItem = useCallback<ScrollToItem>((value, callback) => {
+    if (isMountedRef.current) {
+      const { index, align, smooth } = normalizeScrollToItemOptions(value);
+
+      const getOffset = (index: number): number => {
+        if (isMountedRef.current) {
+          measure();
+
+          const { current: measurements } = measurementsRef;
+          const maxIndex = measurements.length - 1;
+
+          if (maxIndex >= 0) {
+            index = Math.max(0, Math.min(index, maxIndex));
+
+            let { current: offset } = scrollOffsetRef;
+
+            const { start, size, end } = measurements[index];
+            const viewportSize = viewportRectRef.current[keysRef.current.size];
+
+            switch (align) {
+              case Align.Start:
+                offset = start;
+                break;
+              case Align.Center:
+                offset = start + size / 2 - viewportSize / 2;
+                break;
+              case Align.End:
+                offset = end - viewportSize;
+                break;
+              default:
+                if (end <= offset) {
+                  offset = start;
+                } else if (start >= offset + viewportSize) {
+                  offset = end - viewportSize;
+                }
+                break;
+            }
+
+            return Math.max(0, clampOffset(measurements, viewportSize, offset));
+          }
+        }
+
+        return -1;
+      };
+
+      const offset = getOffset(index);
+
+      if (offset >= 0) {
+        scrollTo({ offset, smooth }, () => {
+          const nextOffset = getOffset(index);
+
+          if (nextOffset >= 0 && nextOffset !== offset) {
+            scrollToItem({ index, align, smooth }, callback);
+          } else if (callback) {
+            callback();
+          }
+        });
+      }
     }
   }, []);
 
@@ -107,7 +227,7 @@ export function useVirtual(options: Options): Virtual {
 
   const update = useCallback((scrollOffset: number, events: number): void => {
     if (isMountedRef.current) {
-      remeasure();
+      measure();
 
       const { current: options } = optionsRef;
       const { current: measurements } = measurementsRef;
@@ -159,13 +279,13 @@ export function useVirtual(options: Options): Virtual {
 
                       setMeasurementAt(measurements, index, nextSize);
 
+                      const { current: measureIndex } = measureIndexRef;
                       const { current: scrollOffset } = scrollOffsetRef;
-                      const { current: remeasureIndex } = remeasureIndexRef;
 
-                      if (remeasureIndex < 0) {
-                        remeasureIndexRef.current = index;
+                      if (measureIndex < 0) {
+                        measureIndexRef.current = index;
                       } else {
-                        remeasureIndexRef.current = Math.min(index, remeasureIndex);
+                        measureIndexRef.current = Math.min(index, measureIndex);
                       }
 
                       // 可视区域以上元素高度变化时重新定向滚动位置，防止视野跳动
@@ -246,126 +366,6 @@ export function useVirtual(options: Options): Virtual {
     }
   }, []);
 
-  const scrollTo = useCallback<ScrollTo>((value, callback) => {
-    cancelScheduleFrame(scrollToRafRef.current);
-
-    if (isMountedRef.current) {
-      remeasure();
-
-      const config = normalizeScrollToOptions(value);
-      const viewportSize = viewportRectRef.current[keysRef.current.size];
-      const offset = clampOffset(measurementsRef.current, viewportSize, config.offset);
-
-      const onComplete = () => {
-        if (callback) {
-          // 延迟 6 帧等待绘制完成
-          requestScheduleFrame(
-            6,
-            () => {
-              if (isMountedRef.current) {
-                callback();
-              }
-            },
-            handle => {
-              scrollToRafRef.current = handle;
-            }
-          );
-        }
-      };
-
-      if (config.smooth) {
-        const start = now();
-        const { current: options } = optionsRef;
-        const { current: scrollOffset } = scrollOffsetRef;
-        const config = normalizeScrollingOptions(options.scrolling);
-
-        const distance = offset - scrollOffset;
-        const duration = getDuration(config.duration, Math.abs(distance));
-
-        const scroll = (): void => {
-          if (isMountedRef.current) {
-            const time = Math.min(1, (now() - start) / duration);
-
-            scrollToOffset(config.easing(time) * distance + scrollOffset);
-
-            if (time < 1) {
-              scrollToRafRef.current = requestAnimationFrame(scroll);
-            } else {
-              onComplete();
-            }
-          }
-        };
-
-        scrollToRafRef.current = requestAnimationFrame(scroll);
-      } else {
-        scrollToOffset(offset);
-
-        onComplete();
-      }
-    }
-  }, []);
-
-  const scrollToItem = useCallback<ScrollToItem>((value, callback) => {
-    if (isMountedRef.current) {
-      const { index, align, smooth } = normalizeScrollToItemOptions(value);
-
-      const getOffset = (index: number): number => {
-        if (isMountedRef.current) {
-          remeasure();
-
-          const { current: measurements } = measurementsRef;
-          const maxIndex = measurements.length - 1;
-
-          if (maxIndex >= 0) {
-            index = Math.max(0, Math.min(index, maxIndex));
-
-            let { current: offset } = scrollOffsetRef;
-
-            const { start, size, end } = measurements[index];
-            const viewportSize = viewportRectRef.current[keysRef.current.size];
-
-            switch (align) {
-              case Align.Start:
-                offset = start;
-                break;
-              case Align.Center:
-                offset = start + size / 2 - viewportSize / 2;
-                break;
-              case Align.End:
-                offset = end - viewportSize;
-                break;
-              default:
-                if (end <= offset) {
-                  offset = start;
-                } else if (start >= offset + viewportSize) {
-                  offset = end - viewportSize;
-                }
-                break;
-            }
-
-            return Math.max(0, clampOffset(measurements, viewportSize, offset));
-          }
-        }
-
-        return -1;
-      };
-
-      const offset = getOffset(index);
-
-      if (offset >= 0) {
-        scrollTo({ offset, smooth }, () => {
-          const nextOffset = getOffset(index);
-
-          if (nextOffset >= 0 && nextOffset !== offset) {
-            scrollToItem({ index, align, smooth }, callback);
-          } else if (callback) {
-            callback();
-          }
-        });
-      }
-    }
-  }, []);
-
   useLayoutEffect(() => {
     isMountedRef.current = true;
 
@@ -389,33 +389,21 @@ export function useVirtual(options: Options): Virtual {
       });
 
       const onScroll = () => {
+        // 取消前次滚动状态更新回调
+        cancelScheduleFrame(scrollingRafRef.current);
+
         const scrollOffset = viewport[keysRef.current.scrollOffset];
 
         // 防止非正确方向滚动时触发更新
         if (scrollOffset !== scrollOffsetRef.current) {
+          // 缓存滚动状态
           scrollingRef.current = true;
-
-          // 取消前次滚动状态更新回调
-          cancelScheduleFrame(scrollingRafRef.current);
 
           // 更新可视区域
           update(scrollOffset, Events.Scroll | Events.ReachEnd);
 
           // 缓存滚动位置
           scrollOffsetRef.current = scrollOffset;
-
-          // 延迟 2 帧更新滚动状态并重新触发一次更新同步状态
-          requestScheduleFrame(
-            2,
-            () => {
-              scrollingRef.current = false;
-
-              update(scrollOffsetRef.current, Events.None);
-            },
-            handle => {
-              scrollingRafRef.current = handle;
-            }
-          );
         }
       };
 
@@ -431,16 +419,16 @@ export function useVirtual(options: Options): Virtual {
 
   useEffect(() => {
     if (size !== prevSize) {
-      remeasureIndexRef.current = 0;
+      measureIndexRef.current = 0;
       measurementsRef.current.length = 0;
     } else {
-      const { current: measures } = measurementsRef;
-      const { length } = measures;
+      const { current: measurements } = measurementsRef;
+      const { length } = measurements;
 
       if (length > count) {
-        measures.length = count;
+        measurements.length = count;
       } else if (length < count) {
-        remeasureIndexRef.current = length;
+        measureIndexRef.current = length;
       }
     }
 
