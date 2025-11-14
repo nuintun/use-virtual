@@ -40,7 +40,7 @@ export function isEqualState(next: State, prev: State): boolean {
     return false;
   }
 
-  const keys: (keyof Item)[] = ['index', 'size', 'start', 'end', 'ref'];
+  const keys: (keyof Item)[] = ['index', 'size', 'start', 'end'];
 
   for (let index = 0; index < length; index++) {
     if (!isEqual(nextItems[index], prevItems[index], keys)) {
