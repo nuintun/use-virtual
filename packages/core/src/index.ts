@@ -54,10 +54,10 @@ export function useVirtual(options: Options): Virtual {
   const anchorIndexRef = useRef(0);
   const scrollOffsetRef = useRef(0);
   const isMountedRef = useRef(false);
-  const measureIndexRef = useRef(-1);
   const prevSize = usePrevious(size);
   const scrollingRef = useRef(false);
   const observe = useResizeObserver();
+  const remeasureIndexRef = useRef(-1);
   const optionsRef = useLatestRef(options);
   const scrollToRafRef = useRef<number>(null);
   const scrollingRafRef = useRef<number>(null);
@@ -66,18 +66,18 @@ export function useVirtual(options: Options): Virtual {
   const viewportRectRef = useRef<Rect>({ width: 0, height: 0 });
   const keysRef = useLatestRef(horizontal ? HORIZONTAL_KEYS : VERTICAL_KEYS);
 
-  const measure = useCallback((): void => {
+  const remeasure = useCallback((): void => {
     const { size, count } = optionsRef.current;
-    const { current: measureIndex } = measureIndexRef;
     const { current: measurements } = measurementsRef;
     const { current: viewportRect } = viewportRectRef;
+    const { current: remeasureIndex } = remeasureIndexRef;
 
-    if (measureIndex >= 0) {
-      for (let index = measureIndex; index < count; index++) {
+    if (remeasureIndex >= 0) {
+      for (let index = remeasureIndex; index < count; index++) {
         setMeasurementAt(measurements, index, getSize(measurements, viewportRect, size, index));
       }
 
-      measureIndexRef.current = -1;
+      remeasureIndexRef.current = -1;
     }
   }, []);
 
@@ -92,7 +92,7 @@ export function useVirtual(options: Options): Virtual {
     cancelScheduleFrame(scrollToRafRef.current);
 
     if (isMountedRef.current) {
-      measure();
+      remeasure();
 
       const config = normalizeScrollToOptions(value);
       const viewportSize = viewportRectRef.current[keysRef.current.size];
@@ -153,7 +153,7 @@ export function useVirtual(options: Options): Virtual {
 
       const getOffset = (index: number): number => {
         if (isMountedRef.current) {
-          measure();
+          remeasure();
 
           const { current: measurements } = measurementsRef;
           const maxIndex = measurements.length - 1;
@@ -227,7 +227,7 @@ export function useVirtual(options: Options): Virtual {
 
   const update = useCallback((scrollOffset: number, events: number): void => {
     if (isMountedRef.current) {
-      measure();
+      remeasure();
 
       const { current: options } = optionsRef;
       const { current: measurements } = measurementsRef;
@@ -279,13 +279,13 @@ export function useVirtual(options: Options): Virtual {
 
                       setMeasurementAt(measurements, index, nextSize);
 
-                      const { current: measureIndex } = measureIndexRef;
                       const { current: scrollOffset } = scrollOffsetRef;
+                      const { current: remeasureIndex } = remeasureIndexRef;
 
-                      if (measureIndex < 0) {
-                        measureIndexRef.current = index;
+                      if (remeasureIndex < 0) {
+                        remeasureIndexRef.current = index;
                       } else {
-                        measureIndexRef.current = Math.min(index, measureIndex);
+                        remeasureIndexRef.current = Math.min(index, remeasureIndex);
                       }
 
                       // 可视区域以上元素高度变化时重新定向滚动位置，防止视野跳动
@@ -419,7 +419,7 @@ export function useVirtual(options: Options): Virtual {
 
   useEffect(() => {
     if (size !== prevSize) {
-      measureIndexRef.current = 0;
+      remeasureIndexRef.current = 0;
       measurementsRef.current.length = 0;
     } else {
       const { current: measurements } = measurementsRef;
@@ -428,7 +428,7 @@ export function useVirtual(options: Options): Virtual {
       if (length > count) {
         measurements.length = count;
       } else if (length < count) {
-        measureIndexRef.current = length;
+        remeasureIndexRef.current = length;
       }
     }
 
