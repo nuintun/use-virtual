@@ -53,7 +53,7 @@ const VirtualList = () => {
     size,
     count,
     horizontal,
-    overscan: 30,
+    overscan: 10,
     viewport: () => viewportRef.current,
     onResize: event => console.log('onResize:', event),
     onScroll: event => console.log('onScroll:', event),
