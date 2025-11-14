@@ -54,10 +54,10 @@ const VirtualList = () => {
     count,
     horizontal,
     overscan: 30,
-    viewport: () => viewportRef.current
-    // onResize: event => console.log('onResize:', event),
-    // onScroll: event => console.log('onScroll:', event),
-    // onReachEnd: event => console.log('onReachEnd:', event)
+    viewport: () => viewportRef.current,
+    onResize: event => console.log('onResize:', event),
+    onScroll: event => console.log('onScroll:', event),
+    onReachEnd: event => console.log('onReachEnd:', event)
   });
 
   const onClick = useCallback(() => {
