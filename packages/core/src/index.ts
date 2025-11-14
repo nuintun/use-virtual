@@ -99,7 +99,7 @@ export function useVirtual(options: Options): Virtual {
       const offset = clampOffset(measurementsRef.current, viewportSize, config.offset);
 
       const onComplete = () => {
-        if (callback) {
+        if (callback != null) {
           // 延迟 6 帧等待绘制完成
           requestScheduleFrame(
             6,
@@ -115,7 +115,7 @@ export function useVirtual(options: Options): Virtual {
         }
       };
 
-      if (config.smooth) {
+      if (config.smooth === true) {
         const start = now();
         const { current: options } = optionsRef;
         const { current: scrollOffset } = scrollOffsetRef;
@@ -200,7 +200,7 @@ export function useVirtual(options: Options): Virtual {
 
           if (nextOffset >= 0 && nextOffset !== offset) {
             scrollToItem({ index, align, smooth }, callback);
-          } else if (callback) {
+          } else if (callback != null) {
             callback();
           }
         });
