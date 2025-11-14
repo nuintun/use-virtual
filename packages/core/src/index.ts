@@ -26,10 +26,10 @@ import { HORIZONTAL_KEYS, VERTICAL_KEYS } from './utils/keys';
 import { useResizeObserver } from './hooks/useResizeObserver';
 import { Measurement, setMeasurementAt } from './utils/measurement';
 import { cancelScheduleFrame, requestScheduleFrame } from './utils/frame';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 // 导出配置类型定义
-export type { Options };
+export type { Item, Options };
 
 /**
  * @function useVirtual
@@ -51,7 +51,6 @@ export function useVirtual(options: Options): Virtual {
     }
   }
 
-  const scrollSizeRef = useRef(0);
   const anchorIndexRef = useRef(0);
   const scrollOffsetRef = useRef(0);
   const isMountedRef = useRef(false);
@@ -90,17 +89,19 @@ export function useVirtual(options: Options): Virtual {
   }, []);
 
   const dispatch = useCallback((action: (prevState: State) => State): void => {
-    setState(prevState => {
-      if (__DEV__) {
-        const { size, items } = action(prevState);
-        const nextState = { size, items: Object.freeze(items) };
+    startTransition(() => {
+      setState(prevState => {
+        if (__DEV__) {
+          const { size, items } = action(prevState);
+          const nextState = { size, items: Object.freeze(items) };
+
+          return isEqualState(nextState, prevState) ? prevState : nextState;
+        }
+
+        const nextState = action(prevState);
 
         return isEqualState(nextState, prevState) ? prevState : nextState;
-      }
-
-      const nextState = action(prevState);
-
-      return isEqualState(nextState, prevState) ? prevState : nextState;
+      });
     });
   }, []);
 
@@ -188,10 +189,10 @@ export function useVirtual(options: Options): Virtual {
 
         dispatch(({ size: prevSize }) => {
           if (options.scrollbar === false) {
-            return { items, size: prevSize };
+            return { items, size };
           }
 
-          const { current: scrollSize } = scrollSizeRef;
+          const scrollSize = scrollOffset + viewportSize;
           const usePrevSize = scrollSize < prevSize && scrollSize < size;
 
           return { items, size: usePrevSize ? prevSize : size };
@@ -210,13 +211,13 @@ export function useVirtual(options: Options): Virtual {
           options.onScroll?.({
             offset,
             visible: [start, end],
-            items: [startIndex, endIndex],
-            delta: offset - scrollOffsetRef.current
+            delta: offset - scrollOffset,
+            items: [startIndex, endIndex]
           });
         }
 
         if (hasEvent(events, Events.ReachEnd)) {
-          if (scrollOffset + viewportSize >= scrollSizeRef.current) {
+          if (scrollOffset + viewportSize >= size) {
             options.onReachEnd?.({
               visible: [start, end],
               items: [startIndex, endIndex]
@@ -318,10 +319,10 @@ export function useVirtual(options: Options): Virtual {
           if (maxIndex >= 0) {
             index = Math.max(0, Math.min(index, maxIndex));
 
+            let { current: offset } = scrollOffsetRef;
+
             const { start, size, end } = measurements[index];
             const viewportSize = viewportRectRef.current[keysRef.current.size];
-
-            let { current: offset } = scrollOffsetRef;
 
             switch (align) {
               case Align.Start:
@@ -377,12 +378,8 @@ export function useVirtual(options: Options): Virtual {
     const viewport = optionsRef.current.viewport();
 
     if (viewport != null) {
-      scrollSizeRef.current = viewport[keysRef.current.scrollSize];
-
       const unobserve = observe(viewport, entry => {
         const viewportRect = getBoundingRect(entry, true);
-
-        scrollSizeRef.current = viewport[keysRef.current.scrollSize];
 
         if (!isEqual(viewportRect, viewportRectRef.current, ['width', 'height'])) {
           viewportRectRef.current = viewportRect;

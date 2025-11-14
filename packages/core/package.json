@@ -34,16 +34,31 @@
   },
   "homepage": "https://github.com/nuintun/use-virtual#readme",
   "scripts": {
-    "lint": "pnpm --filter ./packages/* lint",
-    "clean": "pnpm --filter ./packages/* clean",
-    "format": "pnpm --filter ./packages/* format",
-    "build": "pnpm --filter ./packages/core build",
-    "dev": "pnpm --filter ./packages/examples dev",
-    "prod": "pnpm --filter ./packages/examples prod",
-    "reset": "pnpm -s dlx rimraf -g **/node_modules **/pnpm-lock.yaml"
+    "lint": "tsc --noEmit",
+    "clean": "node tools/clean.js",
+    "prepublishOnly": "pnpm build",
+    "build:cjs": "rollup -c tools/rollup.cjs.js",
+    "build:esm": "rollup -c tools/rollup.esm.js",
+    "build:fix-types": "node tools/fix-types.js",
+    "build": "pnpm clean && pnpm build:main && pnpm format",
+    "format": "prettier --write . --ignore-path .prettierignore",
+    "build:main": "pnpm build:cjs && pnpm build:esm && pnpm build:fix-types"
+  },
+  "dependencies": {
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
+    "@rollup/plugin-replace": "^6.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/react": "^19.2.4",
+    "dts-paths": "^1.1.13",
     "prettier": "^3.6.2",
+    "react": "^19.2.0",
+    "rimraf": "^6.1.0",
+    "rollup": "^4.53.2",
     "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
   }
 }
