@@ -312,7 +312,7 @@ export function useVirtual(options: Options): Virtual {
             return { items, size };
           }
 
-          const scrollSize = scrollOffset + viewportSize;
+          const scrollSize = Math.ceil(scrollOffset + viewportSize);
           const usePrevSize = scrollSize < prevSize && scrollSize < size;
 
           return { items, size: usePrevSize ? prevSize : size };
@@ -337,7 +337,7 @@ export function useVirtual(options: Options): Virtual {
         }
 
         if (hasEvent(events, Events.ReachEnd)) {
-          if (scrollOffset + viewportSize >= size) {
+          if (Math.ceil(scrollOffset + viewportSize) >= size) {
             options.onReachEnd?.({
               visible: [start, end],
               items: [startIndex, endIndex]
