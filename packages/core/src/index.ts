@@ -366,15 +366,34 @@ export function useVirtual(options: Options): Virtual {
     }
   }, []);
 
+  useEffect(() => {
+    if (size !== prevSize) {
+      remeasureIndexRef.current = 0;
+      measurementsRef.current.length = 0;
+    } else {
+      const { current: measurements } = measurementsRef;
+      const { length } = measurements;
+
+      if (length > count) {
+        measurements.length = count;
+      } else if (length < count) {
+        remeasureIndexRef.current = length;
+      }
+    }
+
+    const maxIndex = Math.max(0, count - 1);
+    const { current: anchor } = anchorIndexRef;
+
+    anchorIndexRef.current = Math.min(anchor, maxIndex);
+  }, [count, size]);
+
+  useEffect(() => {
+    update(scrollOffsetRef.current, Events.ReachEnd);
+  }, [count, size, horizontal]);
+
   useLayoutEffect(() => {
     isMountedRef.current = true;
 
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  useLayoutEffect(() => {
     const viewport = optionsRef.current.viewport();
 
     if (viewport != null) {
@@ -412,35 +431,12 @@ export function useVirtual(options: Options): Virtual {
       return () => {
         unobserve();
 
+        isMountedRef.current = false;
+
         viewport.removeEventListener('scroll', onScroll);
       };
     }
   }, []);
-
-  useEffect(() => {
-    if (size !== prevSize) {
-      remeasureIndexRef.current = 0;
-      measurementsRef.current.length = 0;
-    } else {
-      const { current: measurements } = measurementsRef;
-      const { length } = measurements;
-
-      if (length > count) {
-        measurements.length = count;
-      } else if (length < count) {
-        remeasureIndexRef.current = length;
-      }
-    }
-
-    const maxIndex = Math.max(0, count - 1);
-    const { current: anchor } = anchorIndexRef;
-
-    anchorIndexRef.current = Math.min(anchor, maxIndex);
-  }, [count, size]);
-
-  useEffect(() => {
-    update(scrollOffsetRef.current, Events.ReachEnd);
-  }, [count, size, horizontal]);
 
   return [state.size, state.items, { scrollTo, scrollToItem }];
 }
