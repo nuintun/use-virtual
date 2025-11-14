@@ -28,7 +28,7 @@ export function isEqual<T>(next: T, prev: T, keys: (keyof T)[]): boolean {
  * @param prev 旧状态
  */
 export function isEqualState(next: State, prev: State): boolean {
-  if (prev.size !== next.size) {
+  if (next.size !== prev.size) {
     return false;
   }
 
@@ -40,9 +40,9 @@ export function isEqualState(next: State, prev: State): boolean {
     return false;
   }
 
-  const keys: (keyof Item)[] = ['index', 'start', 'size', 'end'];
+  const keys: (keyof Item)[] = ['index', 'size', 'start', 'end', 'ref'];
 
-  for (let index = length - 1; index >= 0; index--) {
+  for (let index = 0; index < length; index++) {
     if (!isEqual(nextItems[index], prevItems[index], keys)) {
       return false;
     }

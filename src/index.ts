@@ -137,6 +137,8 @@ export function useVirtual(options: Options): Virtual {
               return observe(
                 element,
                 entry => {
+                  const { current: measurements } = measurementsRef;
+
                   if (index < measurements.length) {
                     const { start, size } = measurements[index];
                     const nextSize = getBoundingRect(entry)[keysRef.current.size];
