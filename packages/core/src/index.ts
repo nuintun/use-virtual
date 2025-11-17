@@ -66,8 +66,8 @@ export function useVirtual(options: Options): Virtual {
       items: new Map(),
       measurements: [],
       scrolling: false,
-      remeasureIndex: 0,
       scrollToRaf: null,
+      remeasureIndex: -1,
       scrollingRaf: null,
       keys: getKeys(horizontal),
       viewport: { width: 0, height: 0 }
