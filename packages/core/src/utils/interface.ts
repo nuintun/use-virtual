@@ -2,11 +2,11 @@
  * @module interface
  */
 
-import { Keys } from './keys';
 import { Rect } from './rect';
 import { Size } from './size';
 import { Item } from './state';
 import { Measurement } from './measurement';
+import { HorizontalKeys, VerticalKeys } from './keys';
 import { onReachEnd, OnResize, OnScroll } from './events';
 import { Scrolling, ScrollTo, ScrollToItem } from './scroll';
 
@@ -28,7 +28,6 @@ export interface Options {
 }
 
 export interface Internal {
-  keys: Keys;
   mounted: boolean;
   scrolling: boolean;
   anchorIndex: number;
@@ -37,6 +36,7 @@ export interface Internal {
   viewport: Mutable<Rect>;
   items: Map<number, Item>;
   measurements: Measurement[];
+  keys: HorizontalKeys | VerticalKeys;
   scrollToRaf: number | null | undefined;
   scrollingRaf: number | null | undefined;
 }
