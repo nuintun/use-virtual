@@ -26,5 +26,9 @@ export interface State {
 export function getInitialState(): State {
   const items: Item[] = [];
 
-  return { size: 0, items: __DEV__ ? Object.freeze(items) : items };
+  if (__DEV__) {
+    Object.freeze(items);
+  }
+
+  return { size: 0, items };
 }

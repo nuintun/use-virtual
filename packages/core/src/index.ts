@@ -20,13 +20,13 @@ import { usePrevious } from './hooks/usePrevious';
 import { useLatestRef } from './hooks/useLatestRef';
 import { Options, Virtual } from './utils/interface';
 import { getBoundingRect, Rect } from './utils/rect';
-import { isEqual, isEqualState } from './utils/equal';
 import { getInitialState, Item, State } from './utils/state';
 import { HORIZONTAL_KEYS, VERTICAL_KEYS } from './utils/keys';
 import { useResizeObserver } from './hooks/useResizeObserver';
 import { Measurement, setMeasurementAt } from './utils/measurement';
+import { isEqualItem, isEqualRect, isEqualState } from './utils/equal';
 import { cancelScheduleFrame, requestScheduleFrame } from './utils/frame';
-import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 // 导出配置类型定义
 export type { Item, Options };
@@ -64,6 +64,7 @@ export function useVirtual(options: Options): Virtual {
   const measurementsRef = useRef<Measurement[]>([]);
   const [state, setState] = useState(getInitialState);
   const viewportRectRef = useRef<Rect>({ width: 0, height: 0 });
+  const prevItems = useMemo<Map<number, Item>>(() => new Map(), []);
   const keysRef = useLatestRef(horizontal ? HORIZONTAL_KEYS : VERTICAL_KEYS);
 
   const remeasure = useCallback((): void => {
@@ -211,13 +212,6 @@ export function useVirtual(options: Options): Virtual {
   const dispatch = useCallback((action: (prevState: State) => State): void => {
     startTransition(() => {
       setState(prevState => {
-        if (__DEV__) {
-          const { size, items } = action(prevState);
-          const nextState = { size, items: Object.freeze(items) };
-
-          return isEqualState(nextState, prevState) ? prevState : nextState;
-        }
-
         const nextState = action(prevState);
 
         return isEqualState(nextState, prevState) ? prevState : nextState;
@@ -248,66 +242,88 @@ export function useVirtual(options: Options): Virtual {
         anchorIndexRef.current = start;
 
         for (let index = startIndex; index <= endIndex; index++) {
-          const measurement = measurements[index];
-          const item: Item = {
-            index,
-            end: measurement.end,
-            size: measurement.size,
-            start: measurement.start,
-            ref: element => {
-              return observe(
-                element,
-                entry => {
-                  const { current: measurements } = measurementsRef;
+          const prevItem = prevItems.get(index);
+          const { size, start, end } = measurements[index];
 
-                  if (index < measurements.length) {
-                    const { start, size } = measurements[index];
-                    const nextSize = getBoundingRect(entry)[keysRef.current.size];
+          if (prevItem != null && isEqualItem({ index, size, start, end }, prevItem)) {
+            items.push(prevItem);
+          } else {
+            const item: Item = {
+              index,
+              end,
+              size,
+              start,
+              ref: element => {
+                const unobserve = observe(
+                  element,
+                  entry => {
+                    const { current: measurements } = measurementsRef;
 
-                    if (nextSize !== size) {
-                      if (__DEV__) {
-                        const { size } = optionsRef.current;
-                        const { current: viewportRect } = viewportRectRef;
-                        const initialValue = getSize(measurements, viewportRect, size, index);
+                    if (index < measurements.length) {
+                      const { start, size } = measurements[index];
+                      const nextSize = getBoundingRect(entry)[keysRef.current.size];
 
-                        if (nextSize < initialValue) {
-                          const message = 'size %o of virtual item %o cannot be less than initial size %o';
+                      if (nextSize !== size) {
+                        if (__DEV__) {
+                          const { size } = optionsRef.current;
+                          const { current: viewportRect } = viewportRectRef;
+                          const initialValue = getSize(measurements, viewportRect, size, index);
 
-                          console.error(message, nextSize, index, initialValue);
+                          if (nextSize < initialValue) {
+                            const message = 'size %o of virtual item %o cannot be less than initial size %o';
+
+                            console.error(message, nextSize, index, initialValue);
+                          }
+                        }
+
+                        setMeasurementAt(measurements, index, nextSize);
+
+                        const { current: scrollOffset } = scrollOffsetRef;
+                        const { current: remeasureIndex } = remeasureIndexRef;
+
+                        if (remeasureIndex < 0) {
+                          remeasureIndexRef.current = index;
+                        } else {
+                          remeasureIndexRef.current = Math.min(index, remeasureIndex);
+                        }
+
+                        // 可视区域以上元素高度变化时重新定向滚动位置，防止视野跳动
+                        if (start < scrollOffset) {
+                          scrollToOffset(scrollOffset + nextSize - size);
+                        } else if (!scrollingRef.current) {
+                          update(scrollOffset, Events.ReachEnd);
                         }
                       }
-
-                      setMeasurementAt(measurements, index, nextSize);
-
-                      const { current: scrollOffset } = scrollOffsetRef;
-                      const { current: remeasureIndex } = remeasureIndexRef;
-
-                      if (remeasureIndex < 0) {
-                        remeasureIndexRef.current = index;
-                      } else {
-                        remeasureIndexRef.current = Math.min(index, remeasureIndex);
-                      }
-
-                      // 可视区域以上元素高度变化时重新定向滚动位置，防止视野跳动
-                      if (start < scrollOffset) {
-                        scrollToOffset(scrollOffset + nextSize - size);
-                      } else if (!scrollingRef.current) {
-                        update(scrollOffset, Events.ReachEnd);
-                      }
                     }
-                  }
-                },
-                { box: 'border-box' }
-              );
-            }
-          };
+                  },
+                  { box: 'border-box' }
+                );
 
-          items.push(__DEV__ ? Object.freeze(item) : item);
+                return () => {
+                  unobserve();
+
+                  prevItems.delete(index);
+                };
+              }
+            };
+
+            if (__DEV__) {
+              Object.freeze(item);
+            }
+
+            items.push(item);
+
+            prevItems.set(index, item);
+          }
         }
 
         const size = measurements[maxIndex].end;
 
         dispatch(({ size: prevSize }) => {
+          if (__DEV__) {
+            Object.freeze(items);
+          }
+
           if (options.scrollbar === false) {
             return { items, size };
           }
@@ -375,7 +391,7 @@ export function useVirtual(options: Options): Virtual {
       const unobserve = observe(viewport, entry => {
         const viewportRect = getBoundingRect(entry, true);
 
-        if (!isEqual(viewportRect, viewportRectRef.current, ['width', 'height'])) {
+        if (!isEqualRect(viewportRect, viewportRectRef.current)) {
           viewportRectRef.current = viewportRect;
 
           update(scrollOffsetRef.current, Events.Resize | Events.ReachEnd);

@@ -2,23 +2,22 @@
  * @module equal
  */
 
+import { Rect } from './rect';
 import { Item, State } from './state';
 
-/**
- * @function isEqual
- * @description 对比两个对象中指定属性
- * @param next 新对象
- * @param prev 旧对象
- * @param keys 属性数组
- */
-export function isEqual<T>(next: T, prev: T, keys: (keyof T)[]): boolean {
-  for (const key of keys) {
-    if (next[key] !== prev[key]) {
-      return false;
-    }
-  }
+type PureItem = Omit<Item, 'ref'>;
 
-  return true;
+export function isEqualItem(next: PureItem, prev: PureItem): boolean {
+  return (
+    // 校验结束位置
+    next.end === prev.end &&
+    // 校验尺寸
+    next.size === prev.size &&
+    // 校验开始位置
+    next.start === prev.start &&
+    // 校验索引
+    next.index === prev.index
+  );
 }
 
 /**
@@ -40,13 +39,20 @@ export function isEqualState(next: State, prev: State): boolean {
     return false;
   }
 
-  const keys: (keyof Item)[] = ['index', 'size', 'start', 'end'];
-
   for (let index = 0; index < length; index++) {
-    if (!isEqual(nextItems[index], prevItems[index], keys)) {
+    if (!isEqualItem(nextItems[index], prevItems[index])) {
       return false;
     }
   }
 
   return true;
+}
+
+export function isEqualRect(next: Rect, prev: Rect): boolean {
+  return (
+    // 校验宽度
+    next.width === prev.width &&
+    // 校验高度
+    next.height === prev.height
+  );
 }
