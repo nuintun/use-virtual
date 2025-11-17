@@ -28,6 +28,11 @@ const HORIZONTAL_KEYS: HorizontalKeys = {
   scrollOffset: 'scrollLeft'
 };
 
+/**
+ * @function getKeys
+ * @description 根据滚动方向获取对应的属性映射对象
+ * @param horizontal 是否为水平滚动模式，默认为 false（垂直滚动）
+ */
 export function getKeys(horizontal?: boolean): HorizontalKeys | VerticalKeys {
   return horizontal ? HORIZONTAL_KEYS : VERTICAL_KEYS;
 }

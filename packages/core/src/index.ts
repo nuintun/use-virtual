@@ -18,15 +18,16 @@ import { clampOffset } from './utils/offset';
 import { getDuration } from './utils/easing';
 import { getBoundingRect } from './utils/rect';
 import { Events, hasEvent } from './utils/events';
+import { useInternal } from './hooks/useInternal';
 import { usePrevious } from './hooks/usePrevious';
 import { useLatestRef } from './hooks/useLatestRef';
+import { Options, Virtual } from './utils/interface';
 import { setMeasurementAt } from './utils/measurement';
 import { getInitialState, Item, State } from './utils/state';
 import { useResizeObserver } from './hooks/useResizeObserver';
-import { Internal, Options, Virtual } from './utils/interface';
 import { isEqualItem, isEqualRect, isEqualState } from './utils/equal';
 import { cancelScheduleFrame, requestScheduleFrame } from './utils/raf';
-import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 // 导出配置类型定义
 export type { Item, Options };
@@ -53,32 +54,13 @@ export function useVirtual(options: Options): Virtual {
 
   const prevSize = usePrevious(size);
   const observe = useResizeObserver();
+  const internal = useInternal(horizontal);
   const optionsRef = useLatestRef(options);
-  const internalRef = useRef<Internal | null>(null);
   const [state, setState] = useState(getInitialState);
-
-  // 初始化内部状态
-  if (internalRef.current == null) {
-    internalRef.current = {
-      anchorIndex: 0,
-      mounted: false,
-      scrollOffset: 0,
-      items: new Map(),
-      measurements: [],
-      scrolling: false,
-      scrollToRaf: null,
-      remeasureIndex: -1,
-      scrollingRaf: null,
-      keys: getKeys(horizontal),
-      viewport: { width: 0, height: 0 }
-    };
-  }
-
-  const internal = internalRef.current;
 
   const remeasure = useCallback((): void => {
     const { size, count } = optionsRef.current;
-    const { measurements, viewport, remeasureIndex } = internal;
+    const { viewport, measurements, remeasureIndex } = internal;
 
     if (remeasureIndex >= 0) {
       for (let index = remeasureIndex; index < count; index++) {
@@ -229,7 +211,7 @@ export function useVirtual(options: Options): Virtual {
       remeasure();
 
       const { current: options } = optionsRef;
-      const { measurements, viewport } = internal;
+      const { viewport, measurements } = internal;
       const viewportSize = viewport[internal.keys.size];
 
       if (viewportSize > 0 && measurements.length > 0) {
