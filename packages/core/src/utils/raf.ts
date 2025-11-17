@@ -1,5 +1,5 @@
 /**
- * @module frame
+ * @module raf
  */
 
 /**

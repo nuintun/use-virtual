@@ -15,45 +15,55 @@
     height: 100%;
     overflow: auto;
 
-    .frame {
+    .list {
       overflow: hidden;
       position: relative;
 
-      .item {
+      .inner {
         top: 0;
         left: 0;
-        border: none;
-        display: flex;
-        overflow: hidden;
         position: absolute;
-        align-items: center;
-        justify-content: center;
 
-        .text {
-          color: rgb(0, 0, 0);
+        .item {
+          border: none;
+          display: flex;
+          overflow: hidden;
+          align-items: center;
+          justify-content: center;
+
+          .text {
+            color: rgb(0, 0, 0);
+          }
         }
       }
     }
 
     &.vertical {
-      .frame {
+      .list {
         width: 100%;
 
-        .item {
+        .inner {
           width: 100%;
+
+          .item {
+            width: 100%;
+          }
         }
       }
     }
 
     &.horizontal {
-      .frame {
+      .list {
         height: 100%;
 
-        .item {
+        .inner {
           height: 100%;
-          overflow: hidden;
-          display: inline-flex;
-          writing-mode: vertical-rl;
+
+          .item {
+            height: 100%;
+            display: inline-flex;
+            writing-mode: vertical-rl;
+          }
         }
       }
     }

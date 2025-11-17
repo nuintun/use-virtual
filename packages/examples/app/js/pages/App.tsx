@@ -5,8 +5,8 @@ import * as styles from '/css/App.module.scss';
 import { Button, Result, Space } from 'antd';
 import { Item, useVirtual } from 'use-virtual';
 import { getRandomInt } from '/js/utils/getRandom';
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 
 const size = 150;
 const items = new Array(1000).fill(size);
@@ -17,7 +17,7 @@ interface VirtualItemProps {
   horizontal: boolean;
 }
 
-const VirtualItem = memo(({ item: { ref, index, start, size }, horizontal }: VirtualItemProps) => {
+const VirtualItem = memo(({ item: { ref, index, size }, horizontal }: VirtualItemProps) => {
   const background = useMemo<string>(() => {
     const r = getRandomInt(127, 255);
     const g = getRandomInt(127, 255);
@@ -34,8 +34,7 @@ const VirtualItem = memo(({ item: { ref, index, start, size }, horizontal }: Vir
       className={`${styles.item}`}
       style={{
         background,
-        [horizontal ? 'width' : 'height']: sizes[index],
-        transform: horizontal ? `translate3d(${start}px, 0, 0)` : `translate3d(0, ${start}px, 0)`
+        [horizontal ? 'width' : 'height']: sizes[index]
       }}
     >
       <span className={styles.text}>
@@ -53,11 +52,11 @@ const VirtualList = () => {
     size,
     count,
     horizontal,
-    overscan: 10,
-    viewport: () => viewportRef.current,
-    onResize: event => console.log('onResize:', event),
-    onScroll: event => console.log('onScroll:', event),
-    onReachEnd: event => console.log('onReachEnd:', event)
+    overscan: 30,
+    viewport: () => viewportRef.current
+    // onResize: event => console.log('onResize:', event),
+    // onScroll: event => console.log('onScroll:', event),
+    // onReachEnd: event => console.log('onReachEnd:', event)
   });
 
   const onClick = useCallback(() => {
@@ -82,10 +81,19 @@ const VirtualList = () => {
   return (
     <>
       <div ref={viewportRef} className={`${styles.viewport} ${horizontal ? styles.horizontal : styles.vertical}`}>
-        <div role="list" className={styles.frame} style={horizontal ? { width: listSize } : { height: listSize }}>
-          {items.map(item => (
-            <VirtualItem key={item.index} item={item} horizontal={horizontal} />
-          ))}
+        <div role="list" className={styles.list} style={{ [horizontal ? 'width' : 'height']: listSize }}>
+          <div
+            className={styles.inner}
+            style={{
+              transform: horizontal
+                ? `translate3d(${items[0]?.start ?? 0}px, 0, 0)`
+                : `translate3d(0, ${items[0]?.start ?? 0}px, 0)`
+            }}
+          >
+            {items.map(item => (
+              <VirtualItem key={item.index} item={item} horizontal={horizontal} />
+            ))}
+          </div>
         </div>
       </div>
       <Space className={styles.action}>
