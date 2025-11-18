@@ -27,7 +27,7 @@ import { getInitialState, Item, State } from './utils/state';
 import { useResizeObserver } from './hooks/useResizeObserver';
 import { isEqualItem, isEqualRect, isEqualState } from './utils/equal';
 import { cancelScheduleFrame, requestScheduleFrame } from './utils/raf';
-import { startTransition, useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 // 导出配置类型定义
 export type { Item, Options };
@@ -197,19 +197,17 @@ export function useVirtual(options: Options): Virtual {
   }, []);
 
   const dispatch = useCallback((action: (prevState: State) => State): void => {
-    startTransition(() => {
-      setState(prevState => {
-        if (__DEV__) {
-          const { size, items } = action(prevState);
-          const nextState = { size, items: Object.freeze(items) };
-
-          return isEqualState(nextState, prevState) ? prevState : nextState;
-        }
-
-        const nextState = action(prevState);
+    setState(prevState => {
+      if (__DEV__) {
+        const { size, items } = action(prevState);
+        const nextState = { size, items: Object.freeze(items) };
 
         return isEqualState(nextState, prevState) ? prevState : nextState;
-      });
+      }
+
+      const nextState = action(prevState);
+
+      return isEqualState(nextState, prevState) ? prevState : nextState;
     });
   }, []);
 
