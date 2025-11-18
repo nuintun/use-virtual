@@ -199,6 +199,13 @@ export function useVirtual(options: Options): Virtual {
   const dispatch = useCallback((action: (prevState: State) => State): void => {
     startTransition(() => {
       setState(prevState => {
+        if (__DEV__) {
+          const { size, items } = action(prevState);
+          const nextState = { size, items: Object.freeze(items) };
+
+          return isEqualState(nextState, prevState) ? prevState : nextState;
+        }
+
         const nextState = action(prevState);
 
         return isEqualState(nextState, prevState) ? prevState : nextState;
@@ -307,16 +314,13 @@ export function useVirtual(options: Options): Virtual {
 
         dispatch(({ size: prevSize }) => {
           if (optionsRef.current.scrollbar === false) {
-            return { size, items: __DEV__ ? Object.freeze(items) : items };
+            return { size, items };
           }
 
           const scrollSize = Math.ceil(scrollOffset + viewportSize);
           const usePrevSize = scrollSize < prevSize && scrollSize < size;
 
-          return {
-            size: usePrevSize ? prevSize : size,
-            items: __DEV__ ? Object.freeze(items) : items
-          };
+          return { size: usePrevSize ? prevSize : size, items };
         });
 
         if (hasEvent(events, Events.Resize)) {
