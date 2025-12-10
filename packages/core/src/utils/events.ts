@@ -26,13 +26,13 @@ export interface OnScroll {
   (event: ScrollEvent): void;
 }
 
-export interface ReachEndEvent {
+export interface EndReachedEvent {
   readonly items: Range;
   readonly visible: Range;
 }
 
-export interface onReachEnd {
-  (event: ReachEndEvent): void;
+export interface onEndReached {
+  (event: EndReachedEvent): void;
 }
 
 // 事件标识

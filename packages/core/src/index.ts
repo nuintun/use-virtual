@@ -343,7 +343,7 @@ export function useVirtual(options: Options): Virtual {
 
         if (hasEvent(events, Events.ReachEnd)) {
           if (Math.ceil(offset + viewportSize) >= size) {
-            options.onReachEnd?.({
+            options.onEndReached?.({
               visible: [start, end],
               items: [startIndex, endIndex]
             });
@@ -362,7 +362,7 @@ export function useVirtual(options: Options): Virtual {
         }
 
         if (viewportSize > 0 && hasEvent(events, Events.ReachEnd)) {
-          options.onReachEnd?.({
+          options.onEndReached?.({
             items: [0, 0],
             visible: [0, 0]
           });
