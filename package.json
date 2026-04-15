@@ -1,20 +1,7 @@
 {
   "name": "use-virtual",
-  "version": "0.2.2",
   "description": "😎 ♻️ A tiny React hook for rendering large datasets like a breeze.",
-  "type": "module",
-  "sideEffects": false,
-  "main": "cjs/index.cjs",
-  "module": "esm/index.js",
-  "exports": {
-    "import": "./esm/index.js",
-    "require": "./cjs/index.cjs",
-    "default": "./esm/index.js"
-  },
-  "files": [
-    "cjs",
-    "esm"
-  ],
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nuintun/use-virtual.git"
