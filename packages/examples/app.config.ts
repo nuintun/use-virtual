@@ -14,13 +14,22 @@ const images = resolve('app/images');
 export default defineConfig({
   ports: 8000,
   lang: 'zh-CN',
+  alias: {
+    '/js': js,
+    '/css': css,
+    '/images': images
+  },
+  publicPath: '/public/',
   context: resolve('app'),
   name: 'React useVirtual',
-  publicPath: '/use-virtual/public/',
   outputPath: resolve('wwwroot/public'),
   entry: resolve('app/js/pages/index.tsx'),
-  entryHTML: resolve('wwwroot/index.html'),
-  favicon: resolve('app/images/favicon.ico'),
-  alias: { '/js': js, '/css': css, '/images': images },
-  meta: { viewport: 'width=device-width,initial-scale=1.0' }
+  historyApiFallback: resolve('wwwroot/app.html'),
+  pages: {
+    filename: resolve('wwwroot/app.html'),
+    favicon: resolve('app/images/favicon.ico'),
+    meta: {
+      viewport: 'width=device-width,initial-scale=1.0'
+    }
+  }
 });
