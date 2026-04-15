@@ -19,9 +19,9 @@ export default defineConfig({
     '/css': css,
     '/images': images
   },
-  publicPath: '/public/',
   context: resolve('app'),
   name: 'React useVirtual',
+  publicPath: '/use-virtual/public/',
   outputPath: resolve('wwwroot/public'),
   entry: resolve('app/js/pages/index.tsx'),
   historyApiFallback: resolve('wwwroot/app.html'),
