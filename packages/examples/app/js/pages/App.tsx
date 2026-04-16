@@ -5,8 +5,8 @@ import * as styles from '/css/App.module.scss';
 import { Button, Result, Space } from 'antd';
 import { Item, useVirtual } from 'use-virtual';
 import { getRandomInt } from '/js/utils/getRandom';
-import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import React, { memo, useCallback, useRef } from 'react';
+import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 
 const rowCount = 1000;
 const colCount = 300;
@@ -18,20 +18,19 @@ const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(co
 interface RowProps {
   row: Item;
   cols: readonly Item[];
-  measureCols: boolean;
 }
 
-const GridRow = memo(({ row, cols, measureCols }: RowProps) => {
+const GridRow = memo(({ row, cols }: RowProps) => {
   return (
     <div ref={row.ref} className={styles.row} style={{ height: rowSizes[row.index] }}>
       {cols.map(col => (
         <div
           key={col.index}
-          ref={measureCols ? col.ref : void 0}
           className={styles.cell}
+          ref={row.index === 0 ? col.ref : void 0}
           style={{
-            width: colSizes[col.index],
             height: row.size,
+            width: colSizes[col.index],
             background: (row.index + col.index) % 2 === 0 ? '#f5f8ff' : '#eef3ff'
           }}
         >
@@ -44,40 +43,39 @@ const GridRow = memo(({ row, cols, measureCols }: RowProps) => {
 
 const VirtualGrid = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [gridHeight, rows, { scrollToItem: scrollToRow }] = useVirtual({
+  const [height, rows, { scrollToItem: scrollToRow }] = useVirtual({
     count: rowCount,
-    overscan: 6,
-    size: (index: number) => rowSizes[index],
+    size: rowBaseSize,
     viewport: () => viewportRef.current
   });
-  const [gridWidth, cols, { scrollToItem: scrollToCol }] = useVirtual({
-    horizontal: true,
+  
+  const [width, cols, { scrollToItem: scrollToCol }] = useVirtual({
     count: colCount,
-    overscan: 4,
-    size: (index: number) => colSizes[index],
+    horizontal: true,
+    size: colBaseSize,
     viewport: () => viewportRef.current
   });
 
   const onScrollToRow = useCallback(() => {
     scrollToRow({
-      index: (Math.random() * rowCount) | 0,
+      smooth: true,
       align: 'center',
-      smooth: false
+      index: (Math.random() * rowCount) | 0
     });
   }, []);
 
   const onScrollToCol = useCallback(() => {
     scrollToCol({
-      index: (Math.random() * colCount) | 0,
+      smooth: true,
       align: 'center',
-      smooth: false
+      index: (Math.random() * colCount) | 0
     });
   }, []);
 
   return (
     <>
       <div ref={viewportRef} className={styles.viewport}>
-        <div role="grid" className={styles.grid} style={{ width: gridWidth, height: gridHeight }}>
+        <div role="grid" className={styles.grid} style={{ width, height }}>
           <div
             className={styles.inner}
             style={{
