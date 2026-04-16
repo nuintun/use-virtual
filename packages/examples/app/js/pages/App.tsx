@@ -10,11 +10,10 @@ import React, { memo, useCallback, useRef } from 'react';
 
 const rowCount = 1000;
 const colCount = 300;
-const rowMinSizes = new Array(rowCount).fill(40).map(() => getRandomInt(40, 56));
-const colMinSizes = new Array(colCount).fill(96).map(() => getRandomInt(96, 132));
-const colLabels = new Array(colCount)
-  .fill(0)
-  .map((_, index) => `Column ${index} ${'·'.repeat((index % 6) * 2 + 2)}`);
+const rowBaseSize = 64;
+const colBaseSize = 160;
+const rowSizes = new Array(rowCount).fill(rowBaseSize).map(() => getRandomInt(rowBaseSize, 120));
+const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(colBaseSize, 240));
 
 interface RowProps {
   row: Item;
@@ -23,23 +22,20 @@ interface RowProps {
 }
 
 const GridRow = memo(({ row, cols, measureCols }: RowProps) => {
-  const rowText = row.index % 7 === 0 ? `Row ${row.index}\nMultiline content` : `Row ${row.index}`;
-
   return (
-    <div ref={row.ref} className={styles.row} style={{ minHeight: rowMinSizes[row.index] }}>
+    <div ref={row.ref} className={styles.row} style={{ height: rowSizes[row.index] }}>
       {cols.map(col => (
         <div
           key={col.index}
           ref={measureCols ? col.ref : void 0}
           className={styles.cell}
           style={{
-            minWidth: colMinSizes[col.index],
+            width: colSizes[col.index],
+            height: row.size,
             background: (row.index + col.index) % 2 === 0 ? '#f5f8ff' : '#eef3ff'
           }}
         >
-          <span className={styles.content}>
-            {rowText} × {colLabels[col.index]}
-          </span>
+          R{row.index} × C{col.index}
         </div>
       ))}
     </div>
@@ -51,14 +47,14 @@ const VirtualGrid = () => {
   const [gridHeight, rows, { scrollToItem: scrollToRow }] = useVirtual({
     count: rowCount,
     overscan: 6,
-    size: (index: number) => rowMinSizes[index],
+    size: (index: number) => rowSizes[index],
     viewport: () => viewportRef.current
   });
   const [gridWidth, cols, { scrollToItem: scrollToCol }] = useVirtual({
     horizontal: true,
     count: colCount,
     overscan: 4,
-    size: (index: number) => colMinSizes[index],
+    size: (index: number) => colSizes[index],
     viewport: () => viewportRef.current
   });
 
