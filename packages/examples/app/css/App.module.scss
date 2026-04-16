@@ -24,14 +24,6 @@
         left: 0;
         position: absolute;
 
-        .measureCols {
-          width: 0;
-          height: 0;
-          display: flex;
-          overflow: hidden;
-          pointer-events: none;
-        }
-
         .row {
           display: flex;
 

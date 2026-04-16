@@ -18,14 +18,16 @@ const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(co
 interface RowProps {
   row: Item;
   cols: readonly Item[];
+  measureCols: boolean;
 }
 
-const GridRow = memo(({ row, cols }: RowProps) => {
+const GridRow = memo(({ row, cols, measureCols }: RowProps) => {
   return (
     <div ref={row.ref} className={styles.row} style={{ height: rowSizes[row.index] }}>
       {cols.map(col => (
         <div
           key={col.index}
+          ref={measureCols ? col.ref : void 0}
           className={styles.cell}
           style={{
             width: colSizes[col.index],
@@ -82,13 +84,8 @@ const VirtualGrid = () => {
               transform: `translate3d(${cols[0]?.start ?? 0}px, ${rows[0]?.start ?? 0}px, 0)`
             }}
           >
-            <div className={styles.measureCols} aria-hidden>
-              {cols.map((col: Item) => (
-                <div key={col.index} ref={col.ref} style={{ width: colSizes[col.index] }} />
-              ))}
-            </div>
             {rows.map((row: Item) => (
-              <GridRow key={row.index} row={row} cols={cols} />
+              <GridRow key={row.index} row={row} cols={cols} measureCols={row.index === rows[0]?.index} />
             ))}
           </div>
         </div>
