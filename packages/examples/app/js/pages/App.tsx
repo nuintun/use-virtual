@@ -6,102 +6,96 @@ import { Button, Result, Space } from 'antd';
 import { Item, useVirtual } from 'use-virtual';
 import { getRandomInt } from '/js/utils/getRandom';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useRef } from 'react';
 
-const size = 150;
-const items = new Array(1000).fill(size);
-const sizes = items.map(() => getRandomInt(size, 300));
+const rowCount = 1000;
+const colCount = 300;
+const rowBaseSize = 64;
+const colBaseSize = 160;
+const rowSizes = new Array(rowCount).fill(rowBaseSize).map(() => getRandomInt(rowBaseSize, 120));
+const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(colBaseSize, 240));
 
-interface VirtualItemProps {
-  item: Item;
-  horizontal: boolean;
+interface RowProps {
+  row: Item;
+  cols: readonly Item[];
+  measureCols: boolean;
 }
 
-const VirtualItem = memo(({ item: { ref, index, size }, horizontal }: VirtualItemProps) => {
-  const background = useMemo<string>(() => {
-    const r = getRandomInt(127, 255);
-    const g = getRandomInt(127, 255);
-    const b = getRandomInt(127, 255);
-
-    return `rgb(${r}, ${g}, ${b})`;
-  }, []);
-
+const GridRow = memo(({ row, cols, measureCols }: RowProps) => {
   return (
-    <div
-      ref={ref}
-      role="listitem"
-      aria-posinset={index}
-      className={`${styles.item}`}
-      style={{
-        background,
-        [horizontal ? 'width' : 'height']: sizes[index]
-      }}
-    >
-      <span className={styles.text}>
-        📏 {index} - {size}px - {background}
-      </span>
+    <div ref={row.ref} className={styles.row} style={{ height: rowSizes[row.index] }}>
+      {cols.map(col => (
+        <div
+          key={col.index}
+          ref={measureCols ? col.ref : void 0}
+          className={styles.cell}
+          style={{
+            width: colSizes[col.index],
+            height: row.size,
+            background: (row.index + col.index) % 2 === 0 ? '#f5f8ff' : '#eef3ff'
+          }}
+        >
+          R{row.index} × C{col.index}
+        </div>
+      ))}
     </div>
   );
 });
 
-const VirtualList = () => {
-  const { length: count } = sizes;
+const VirtualGrid = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [horizontal, setHorizontal] = useState(false);
-  const [listSize, items, { scrollToItem }] = useVirtual({
-    size,
-    count,
-    horizontal,
-    overscan: 30,
-    viewport: () => viewportRef.current,
-    onResize: event => console.log('onResize:', event),
-    onScroll: event => console.log('onScroll:', event),
-    onEndReached: event => console.log('onEndReached:', event)
+  const [gridHeight, rows, { scrollToItem: scrollToRow }] = useVirtual({
+    count: rowCount,
+    overscan: 6,
+    size: (index: number) => rowSizes[index],
+    viewport: () => viewportRef.current
+  });
+  const [gridWidth, cols, { scrollToItem: scrollToCol }] = useVirtual({
+    horizontal: true,
+    count: colCount,
+    overscan: 4,
+    size: (index: number) => colSizes[index],
+    viewport: () => viewportRef.current
   });
 
-  const onClick = useCallback(() => {
-    setHorizontal(horizontal => !horizontal);
+  const onScrollToRow = useCallback(() => {
+    scrollToRow({
+      index: (Math.random() * rowCount) | 0,
+      align: 'center',
+      smooth: false
+    });
   }, []);
 
-  const onScrollToItem = useCallback(() => {
-    const index = (Math.random() * count) | 0;
-
-    scrollToItem(
-      {
-        index,
-        smooth: false,
-        align: 'center'
-      },
-      () => {
-        console.log('scrollToItem:', index, 'done');
-      }
-    );
+  const onScrollToCol = useCallback(() => {
+    scrollToCol({
+      index: (Math.random() * colCount) | 0,
+      align: 'center',
+      smooth: false
+    });
   }, []);
 
   return (
     <>
-      <div ref={viewportRef} className={`${styles.viewport} ${horizontal ? styles.horizontal : styles.vertical}`}>
-        <div role="list" className={styles.list} style={{ [horizontal ? 'width' : 'height']: listSize }}>
+      <div ref={viewportRef} className={styles.viewport}>
+        <div role="grid" className={styles.grid} style={{ width: gridWidth, height: gridHeight }}>
           <div
             className={styles.inner}
             style={{
-              transform: horizontal
-                ? `translate3d(${items[0]?.start ?? 0}px, 0, 0)`
-                : `translate3d(0, ${items[0]?.start ?? 0}px, 0)`
+              transform: `translate3d(${cols[0]?.start ?? 0}px, ${rows[0]?.start ?? 0}px, 0)`
             }}
           >
-            {items.map(item => (
-              <VirtualItem key={item.index} item={item} horizontal={horizontal} />
+            {rows.map((row: Item) => (
+              <GridRow key={row.index} row={row} cols={cols} measureCols={row.index === rows[0]?.index} />
             ))}
           </div>
         </div>
       </div>
       <Space className={styles.action}>
-        <Button type="primary" onClick={onScrollToItem}>
-          滚动到随机索引
+        <Button type="primary" onClick={onScrollToRow}>
+          滚动到随机行
         </Button>
-        <Button type="primary" onClick={onClick}>
-          切换虚列表方向
+        <Button type="primary" onClick={onScrollToCol}>
+          滚动到随机列
         </Button>
       </Space>
     </>
@@ -122,7 +116,7 @@ const ErrorFallback = memo(function ErrorFallback({ error, resetErrorBoundary }:
         subTitle={
           <div style={{ display: 'flex', margin: '24px 0 0', justifyContent: 'center' }}>
             <pre style={{ fontFamily: 'monospace', color: '#f00', padding: 0, margin: 0, textAlign: 'left' }}>
-              {error.stack}
+              {(error as Error).stack}
             </pre>
           </div>
         }
@@ -148,7 +142,7 @@ export default memo(function App(): React.ReactElement {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <div className={styles.app}>
-        <VirtualList />
+        <VirtualGrid />
       </div>
     </ErrorBoundary>
   );
