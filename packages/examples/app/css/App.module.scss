@@ -15,7 +15,7 @@
     height: 100%;
     overflow: auto;
 
-    .list {
+    .grid {
       overflow: hidden;
       position: relative;
 
@@ -24,45 +24,28 @@
         left: 0;
         position: absolute;
 
-        .item {
-          border: none;
+        .measureCols {
+          width: 0;
+          height: 0;
           display: flex;
           overflow: hidden;
-          align-items: center;
-          justify-content: center;
-
-          .text {
-            color: rgb(0, 0, 0);
-          }
+          pointer-events: none;
         }
-      }
-    }
 
-    &.vertical {
-      .list {
-        width: 100%;
+        .row {
+          display: flex;
 
-        .inner {
-          width: 100%;
-
-          .item {
-            width: 100%;
-          }
-        }
-      }
-    }
-
-    &.horizontal {
-      .list {
-        height: 100%;
-
-        .inner {
-          height: 100%;
-
-          .item {
-            height: 100%;
-            display: inline-flex;
-            writing-mode: vertical-rl;
+          .cell {
+            flex: 0 0 auto;
+            border: 1px solid #d6deff;
+            box-sizing: border-box;
+            color: rgb(49, 64, 99);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+              monospace;
+            font-size: 12px;
           }
         }
       }
