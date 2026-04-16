@@ -18,16 +18,17 @@ const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(co
 interface RowProps {
   row: Item;
   cols: readonly Item[];
+  measureColInRowIndex: number;
 }
 
-const GridRow = memo(({ row, cols }: RowProps) => {
+const GridRow = memo(({ row, cols, measureColInRowIndex }: RowProps) => {
   return (
     <div ref={row.ref} className={styles.row} style={{ height: rowSizes[row.index] }}>
       {cols.map(col => (
         <div
           key={col.index}
           className={styles.cell}
-          ref={row.index === col.index ? col.ref : void 0}
+          ref={row.index === measureColInRowIndex ? col.ref : void 0}
           style={{
             height: row.size,
             width: colSizes[col.index],
@@ -55,6 +56,7 @@ const VirtualGrid = () => {
     size: colBaseSize,
     viewport: () => viewportRef.current
   });
+  const measureColInRowIndex = rows[0]?.index ?? 0;
 
   const onScrollToRow = useCallback(() => {
     scrollToRow({
@@ -83,7 +85,7 @@ const VirtualGrid = () => {
             }}
           >
             {rows.map((row: Item) => (
-              <GridRow key={row.index} row={row} cols={cols} />
+              <GridRow key={row.index} row={row} cols={cols} measureColInRowIndex={measureColInRowIndex} />
             ))}
           </div>
         </div>
