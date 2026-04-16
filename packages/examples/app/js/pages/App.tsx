@@ -56,6 +56,7 @@ const VirtualGrid = () => {
     size: colBaseSize,
     viewport: () => viewportRef.current
   });
+  
   const measureColInRowIndex = rows[0]?.index ?? 0;
 
   const onScrollToRow = useCallback(() => {
