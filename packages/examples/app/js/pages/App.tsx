@@ -27,7 +27,7 @@ const GridRow = memo(({ row, cols }: RowProps) => {
         <div
           key={col.index}
           className={styles.cell}
-          ref={row.index === 0 ? col.ref : void 0}
+          ref={row.index === col.index ? col.ref : void 0}
           style={{
             height: row.size,
             width: colSizes[col.index],
