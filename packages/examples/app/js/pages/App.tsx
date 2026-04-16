@@ -83,7 +83,7 @@ const VirtualGrid = () => {
             }}
           >
             {rows.map((row: Item) => (
-              <GridRow key={row.index} row={row} cols={cols} measureCols={row.index === rows[0]?.index} />
+              <GridRow key={row.index} row={row} cols={cols} />
             ))}
           </div>
         </div>
