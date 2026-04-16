@@ -33,16 +33,11 @@
             box-sizing: border-box;
             color: rgb(49, 64, 99);
             display: flex;
-            align-items: stretch;
-            justify-content: flex-start;
+            align-items: center;
+            justify-content: center;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
               monospace;
             font-size: 12px;
-
-            .content {
-              padding: 10px 12px;
-              white-space: pre-wrap;
-            }
           }
         }
       }
