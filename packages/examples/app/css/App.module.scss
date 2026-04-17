@@ -19,25 +19,20 @@
       overflow: hidden;
       position: relative;
 
-      .inner {
-        top: 0;
-        left: 0;
-        position: absolute;
+      .row {
+        display: flex;
+        will-change: transform;
 
-        .row {
+        .cell {
           display: flex;
-
-          .cell {
-            display: flex;
-            flex: 0 0 auto;
-            font-size: 12px;
-            align-items: center;
-            box-sizing: border-box;
-            justify-content: center;
-            color: rgb(49, 64, 99);
-            border: 1px solid #d6deff;
-            font-family: Consolas, monospace;
-          }
+          flex: 0 0 auto;
+          font-size: 12px;
+          align-items: center;
+          box-sizing: border-box;
+          justify-content: center;
+          color: rgb(49, 64, 99);
+          border: 1px solid #d6deff;
+          font-family: Consolas, monospace;
         }
       }
     }

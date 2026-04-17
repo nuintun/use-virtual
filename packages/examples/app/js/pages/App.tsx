@@ -31,14 +31,27 @@ const GridRow = memo(({ row, cols, measureColInRowIndex }: RowProps) => {
   const rowHeight = rowSizes[row.index];
 
   return (
-    <div ref={row.ref} className={styles.row} style={{ height: rowHeight }}>
+    <div
+      ref={row.ref}
+      className={styles.row}
+      style={{
+        left: 0,
+        width: '100%',
+        top: row.start,
+        height: rowHeight,
+        position: 'absolute'
+      }}
+    >
       {cols.map(col => (
         <div
           key={col.index}
           className={styles.cell}
           ref={row.index === measureColInRowIndex ? col.ref : void 0}
           style={{
+            top: 0,
+            left: col.start,
             height: rowHeight,
+            position: 'absolute',
             width: colSizes[col.index],
             background: (row.index + col.index) % 2 === 0 ? '#f5f8ff' : '#eef3ff'
           }}
@@ -87,16 +100,9 @@ const VirtualGrid = () => {
     <>
       <div ref={viewportRef} className={styles.viewport}>
         <div role="grid" className={styles.grid} style={{ width, height }}>
-          <div
-            className={styles.inner}
-            style={{
-              transform: `translate3d(${cols[0]?.start ?? 0}px, ${rows[0]?.start ?? 0}px, 0)`
-            }}
-          >
-            {rows.map((row: Item) => (
-              <GridRow key={row.index} row={row} cols={cols} measureColInRowIndex={measureColInRowIndex} />
-            ))}
-          </div>
+          {rows.map(row => (
+            <GridRow key={row.index} row={row} cols={cols} measureColInRowIndex={measureColInRowIndex} />
+          ))}
         </div>
       </div>
       <Space className={styles.action}>
