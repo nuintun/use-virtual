@@ -40,9 +40,14 @@ function binarySearch(measurements: Measurement[], offset: number, start: number
  * @param anchor 锚点索引
  */
 export function getRange(measurements: Measurement[], viewport: number, offset: number, anchor: number): Range {
+  const maxIndex = measurements.length - 1;
+
+  if (maxIndex < 0) {
+    return [0, 0];
+  }
+
   let start = anchor;
 
-  const maxIndex = measurements.length - 1;
   const offsetEnd = offset + viewport;
   const { start: anchorOffset } = measurements[anchor];
 
@@ -52,16 +57,10 @@ export function getRange(measurements: Measurement[], viewport: number, offset: 
     start = binarySearch(measurements, offset, anchor, maxIndex);
   }
 
-  let end = start;
+  let end = binarySearch(measurements, offsetEnd, start, maxIndex);
 
-  while (end < maxIndex) {
-    const measurement = measurements[end];
-
-    if (measurement.start < offsetEnd && measurement.end >= offsetEnd) {
-      return [start, end];
-    } else {
-      end++;
-    }
+  if (end < maxIndex && measurements[end].end < offsetEnd) {
+    end++;
   }
 
   return [start, end];
