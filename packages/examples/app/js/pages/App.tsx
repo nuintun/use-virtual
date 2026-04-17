@@ -8,7 +8,7 @@ import { getRandomInt } from '/js/utils/getRandom';
 import React, { memo, useCallback, useRef } from 'react';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 
-const rowCount = 100;
+const rowCount = 500;
 const colCount = 100;
 const rowBaseSize = 32;
 const colBaseSize = 96;
