@@ -13,6 +13,20 @@ const colCount = 1000;
 const rowBaseSize = 32;
 const colBaseSize = 96;
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const { stack, message } = error;
+
+    if (stack != null) {
+      return stack?.replace(/(\r?\n)\s{2,}/gm, '$1  ');
+    }
+
+    return message;
+  }
+
+  return `${error}`;
+}
+
 const rowSizes = new Array(rowCount).fill(rowBaseSize).map(() => {
   return getRandomInt(rowBaseSize, 40);
 });
@@ -31,27 +45,14 @@ const GridRow = memo(({ row, cols, measureColInRowIndex }: RowProps) => {
   const rowHeight = rowSizes[row.index];
 
   return (
-    <div
-      ref={row.ref}
-      className={styles.row}
-      style={{
-        left: 0,
-        width: '100%',
-        top: row.start,
-        height: rowHeight,
-        position: 'absolute'
-      }}
-    >
+    <div ref={row.ref} className={styles.row} style={{ height: rowHeight }}>
       {cols.map(col => (
         <div
           key={col.index}
           className={styles.cell}
           ref={row.index === measureColInRowIndex ? col.ref : void 0}
           style={{
-            top: 0,
-            left: col.start,
             height: rowHeight,
-            position: 'absolute',
             width: colSizes[col.index],
             background: (row.index + col.index) % 2 === 0 ? '#f5f8ff' : '#eef3ff'
           }}
@@ -100,9 +101,16 @@ const VirtualGrid = () => {
     <>
       <div ref={viewportRef} className={styles.viewport}>
         <div role="grid" className={styles.grid} style={{ width, height }}>
-          {rows.map(row => (
-            <GridRow key={row.index} row={row} cols={cols} measureColInRowIndex={measureColInRowIndex} />
-          ))}
+          <div
+            className={styles.inner}
+            style={{
+              transform: `translate3d(${cols[0]?.start ?? 0}px, ${rows[0]?.start ?? 0}px, 0)`
+            }}
+          >
+            {rows.map((row: Item) => (
+              <GridRow key={row.index} row={row} cols={cols} measureColInRowIndex={measureColInRowIndex} />
+            ))}
+          </div>
         </div>
       </div>
       <Space className={styles.action}>
@@ -131,7 +139,7 @@ const ErrorFallback = memo(function ErrorFallback({ error, resetErrorBoundary }:
         subTitle={
           <div style={{ display: 'flex', margin: '24px 0 0', justifyContent: 'center' }}>
             <pre style={{ fontFamily: 'monospace', color: '#f00', padding: 0, margin: 0, textAlign: 'left' }}>
-              {(error as Error).stack}
+              {getErrorMessage(error)}
             </pre>
           </div>
         }
