@@ -9,11 +9,17 @@ import React, { memo, useCallback, useRef } from 'react';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 
 const rowCount = 1000;
-const colCount = 300;
+const colCount = 1000;
 const rowBaseSize = 32;
-const colBaseSize = 128;
-const rowSizes = new Array(rowCount).fill(rowBaseSize).map(() => getRandomInt(rowBaseSize, 40));
-const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(colBaseSize, 192));
+const colBaseSize = 96;
+
+const rowSizes = new Array(rowCount).fill(rowBaseSize).map(() => {
+  return getRandomInt(rowBaseSize, 40);
+});
+
+const colSizes = new Array(colCount).fill(colBaseSize).map(() => {
+  return getRandomInt(colBaseSize, 152);
+});
 
 interface RowProps {
   row: Item;
@@ -22,15 +28,17 @@ interface RowProps {
 }
 
 const GridRow = memo(({ row, cols, measureColInRowIndex }: RowProps) => {
+  const rowHeight = rowSizes[row.index];
+
   return (
-    <div ref={row.ref} className={styles.row} style={{ height: rowSizes[row.index] }}>
+    <div ref={row.ref} className={styles.row} style={{ height: rowHeight }}>
       {cols.map(col => (
         <div
           key={col.index}
           className={styles.cell}
           ref={row.index === measureColInRowIndex ? col.ref : void 0}
           style={{
-            height: row.size,
+            height: rowHeight,
             width: colSizes[col.index],
             background: (row.index + col.index) % 2 === 0 ? '#f5f8ff' : '#eef3ff'
           }}
@@ -45,12 +53,14 @@ const GridRow = memo(({ row, cols, measureColInRowIndex }: RowProps) => {
 const VirtualGrid = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [height, rows, { scrollToItem: scrollToRow }] = useVirtual({
+    overscan: 20,
     count: rowCount,
     size: rowBaseSize,
     viewport: () => viewportRef.current
   });
 
   const [width, cols, { scrollToItem: scrollToCol }] = useVirtual({
+    overscan: 10,
     count: colCount,
     horizontal: true,
     size: colBaseSize,
