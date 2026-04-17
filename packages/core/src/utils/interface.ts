@@ -7,7 +7,7 @@ import { Size } from './size';
 import { Item } from './state';
 import { Measurement } from './measurement';
 import { HorizontalKeys, VerticalKeys } from './keys';
-import { onEndReached, OnResize, OnScroll } from './events';
+import { OnEndReached, OnResize, OnScroll } from './events';
 import { Scrolling, ScrollTo, ScrollToItem } from './scroll';
 
 type Mutable<T> = {
@@ -23,7 +23,7 @@ export interface Options {
   readonly size: number | Size;
   readonly horizontal?: boolean;
   readonly scrolling?: Scrolling;
-  readonly onEndReached?: onEndReached;
+  readonly onEndReached?: OnEndReached;
   readonly viewport: () => Element | null;
 }
 

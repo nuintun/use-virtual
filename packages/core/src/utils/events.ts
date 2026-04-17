@@ -31,7 +31,7 @@ export interface EndReachedEvent {
   readonly visible: Range;
 }
 
-export interface onEndReached {
+export interface OnEndReached {
   (event: EndReachedEvent): void;
 }
 

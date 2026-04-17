@@ -10,10 +10,10 @@ import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 
 const rowCount = 1000;
 const colCount = 300;
-const rowBaseSize = 64;
-const colBaseSize = 160;
-const rowSizes = new Array(rowCount).fill(rowBaseSize).map(() => getRandomInt(rowBaseSize, 120));
-const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(colBaseSize, 240));
+const rowBaseSize = 32;
+const colBaseSize = 128;
+const rowSizes = new Array(rowCount).fill(rowBaseSize).map(() => getRandomInt(rowBaseSize, 40));
+const colSizes = new Array(colCount).fill(colBaseSize).map(() => getRandomInt(colBaseSize, 192));
 
 interface RowProps {
   row: Item;
@@ -49,19 +49,18 @@ const VirtualGrid = () => {
     size: rowBaseSize,
     viewport: () => viewportRef.current
   });
-  
+
   const [width, cols, { scrollToItem: scrollToCol }] = useVirtual({
     count: colCount,
     horizontal: true,
     size: colBaseSize,
     viewport: () => viewportRef.current
   });
-  
+
   const measureColInRowIndex = rows[0]?.index ?? 0;
 
   const onScrollToRow = useCallback(() => {
     scrollToRow({
-      smooth: true,
       align: 'center',
       index: (Math.random() * rowCount) | 0
     });
@@ -69,7 +68,6 @@ const VirtualGrid = () => {
 
   const onScrollToCol = useCallback(() => {
     scrollToCol({
-      smooth: true,
       align: 'center',
       index: (Math.random() * colCount) | 0
     });
