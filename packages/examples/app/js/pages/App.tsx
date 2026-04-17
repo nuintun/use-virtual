@@ -67,14 +67,12 @@ const GridRow = memo(({ row, cols, measureColInRowIndex }: RowProps) => {
 const VirtualGrid = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [height, rows, { scrollToItem: scrollToRow }] = useVirtual({
-    overscan: 20,
     count: rowCount,
     size: rowBaseSize,
     viewport: () => viewportRef.current
   });
 
   const [width, cols, { scrollToItem: scrollToCol }] = useVirtual({
-    overscan: 10,
     count: colCount,
     horizontal: true,
     size: colBaseSize,
