@@ -90,9 +90,9 @@ export function useVirtual(options: Options): Virtual {
 
       const onComplete = () => {
         if (callback != null) {
-          // 延迟 6 帧等待绘制完成
+          // 延迟 8 帧等待绘制完成
           requestScheduleFrame(
-            6,
+            8,
             () => {
               if (internal.mounted) {
                 callback();
