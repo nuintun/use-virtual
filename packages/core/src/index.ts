@@ -318,7 +318,7 @@ export function useVirtual(options: Options): Virtual {
           }
 
           const scrollSize = Math.ceil(scrollOffset + viewportSize);
-          const usePrevSize = scrollSize < prevSize && scrollSize < size;
+          const usePrevSize = hasEvent(events, Events.Scroll) && scrollSize < prevSize && scrollSize < size;
 
           return { size: usePrevSize ? prevSize : size, items };
         });
