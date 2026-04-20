@@ -35,8 +35,12 @@ export interface Internal {
   remeasureIndex: number;
   viewport: Mutable<Rect>;
   items: Map<number, Item>;
+  pendingReachEnd: boolean;
+  pendingScrollDelta: number;
   measurements: Measurement[];
+  scrollElement: Element | null;
   keys: HorizontalKeys | VerticalKeys;
+  measureRaf: number | null | undefined;
   scrollToRaf: number | null | undefined;
   scrollingRaf: number | null | undefined;
 }

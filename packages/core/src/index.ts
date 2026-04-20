@@ -72,7 +72,7 @@ export function useVirtual(options: Options): Virtual {
   }, []);
 
   const scrollToOffset = useCallback((offset: number): void => {
-    optionsRef.current.viewport()?.scrollTo({
+    internal.scrollElement?.scrollTo({
       behavior: 'instant',
       [internal.keys.scrollTo]: offset
     });
@@ -213,6 +213,31 @@ export function useVirtual(options: Options): Virtual {
     });
   }, []);
 
+  const scheduleMeasurementWork = useCallback(() => {
+    if (internal.measureRaf == null) {
+      internal.measureRaf = requestAnimationFrame(() => {
+        internal.measureRaf = null;
+
+        if (internal.mounted) {
+          if (internal.pendingScrollDelta !== 0) {
+            const nextOffset = internal.scrollOffset + internal.pendingScrollDelta;
+
+            internal.pendingScrollDelta = 0;
+            internal.scrollOffset = nextOffset;
+
+            scrollToOffset(nextOffset);
+          }
+
+          if (internal.pendingReachEnd && !internal.scrolling) {
+            internal.pendingReachEnd = false;
+
+            update(internal.scrollOffset, Events.ReachEnd);
+          }
+        }
+      });
+    }
+  }, []);
+
   const update = useCallback((scrollOffset: number, events: Events): void => {
     if (internal.mounted) {
       remeasure();
@@ -278,9 +303,13 @@ export function useVirtual(options: Options): Virtual {
 
                         // 可视区域以上元素高度变化时重新定向滚动位置，防止视野跳动
                         if (start < scrollOffset) {
-                          scrollToOffset(scrollOffset + nextSize - size);
+                          internal.pendingScrollDelta += nextSize - size;
+
+                          scheduleMeasurementWork();
                         } else if (!internal.scrolling) {
-                          update(scrollOffset, Events.ReachEnd);
+                          internal.pendingReachEnd = true;
+
+                          scheduleMeasurementWork();
                         }
                       }
                     }
@@ -400,6 +429,8 @@ export function useVirtual(options: Options): Virtual {
     const viewport = optionsRef.current.viewport();
 
     if (viewport != null) {
+      internal.scrollElement = viewport;
+
       const unobserve = observe(viewport, entry => {
         const viewport = getBoundingRect(entry, true);
 
@@ -453,6 +484,7 @@ export function useVirtual(options: Options): Virtual {
         internal.items.clear();
 
         internal.mounted = false;
+        internal.scrollElement = null;
 
         viewport.removeEventListener('scroll', onScroll);
       };

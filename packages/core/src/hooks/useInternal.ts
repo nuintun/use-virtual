@@ -21,11 +21,15 @@ export function useInternal(horizontal?: boolean): Internal {
       mounted: false,
       scrollOffset: 0,
       items: new Map(),
+      measureRaf: null,
       measurements: [],
       scrolling: false,
       scrollToRaf: null,
       remeasureIndex: -1,
       scrollingRaf: null,
+      scrollElement: null,
+      pendingScrollDelta: 0,
+      pendingReachEnd: false,
       keys: getKeys(horizontal),
       viewport: { width: 0, height: 0 }
     };
