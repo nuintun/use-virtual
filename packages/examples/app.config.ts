@@ -6,6 +6,7 @@
 import { resolve } from 'node:path';
 import { defineConfig } from './tools/index.ts';
 
+const app = resolve('app');
 const js = resolve('app/js');
 const css = resolve('app/css');
 const images = resolve('app/images');
@@ -14,13 +15,14 @@ const html = resolve('wwwroot/index.html');
 // 生成配置文件
 export default defineConfig({
   ports: 8000,
+  roots: [app],
+  context: app,
   lang: 'zh-CN',
   alias: {
     '/js': js,
     '/css': css,
     '/images': images
   },
-  context: resolve('app'),
   name: 'React useVirtual',
   historyApiFallback: html,
   publicPath: '/use-virtual/public/',
