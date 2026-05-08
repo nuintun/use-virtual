@@ -25,11 +25,6 @@
       ]
     }
   },
-  "include": [
-    "src/**/*",
-    "tools/**/*",
-    "global.d.ts"
-  ],
   "exclude": [
     "node_modules"
   ]
